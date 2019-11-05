@@ -25,10 +25,8 @@ rule convert_gtf:
 		temp("{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA.gff")
 	conda:
 		'envs/gffread.yaml'
-	
-	run:
-		if GFF[-3:] == "gtf":
-			shell("gffread -O {input} -o {output}")
+	shell:
+		"gffread -O {input} -o {output}"
 
 	
 				
@@ -154,9 +152,9 @@ rule convert_output:
 		'{original_chrom}_to_{new_chrom}/{new_chrom}_genomeB.gtf'
 	conda:
 		'envs/gffread.yaml'
-	run:
-		if OUTPUT_FORMAT == "gtf":
-			shell("gffread {input} -T -o {output}")
+			
+	shell:
+		"gffread {input} -T -o {output}"
 
 
 
