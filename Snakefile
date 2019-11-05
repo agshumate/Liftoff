@@ -145,7 +145,7 @@ rule lift_genes:
 	conda:
 		'envs/liftover.yaml'
 	script:
-		"/home/ashumate/AJ_genome/1.1/final_split/blast_results/liftover_scripts/lift_all_genes.py"
+		"scripts/lift_all_genes.py"
 
 rule convert_output:
 	input:

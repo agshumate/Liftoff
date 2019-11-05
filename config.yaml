@@ -1,7 +1,7 @@
-gff: GCF_000001405.25_GRCh37.p13_genomic.gtf 
-output_format: gtf
+gff: gff3_or_gtf_to_be_lifted 
+output_format: gtf_or_gff3
 original_chroms: original_chroms.txt
 new_chroms: new_chroms.txt
-original_fasta: GCF_000001405.25_GRCh37.p13_genomic.fna  
-new_fasta: GRCh38.fa 
-word_size: 50 
+original_fasta: original_genome_assembly.fa 
+new_fasta: new_genome_assembly.fa 
+word_size: blast_word_size 
