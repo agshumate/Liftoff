@@ -19,14 +19,14 @@ def print_gff(aligned, f, failed_file):
                     if exon.start != -1 and exon.end != -1 :
                         f.write(chrm + "\t" + exon.source + "\t" + "exon" + "\t" + str(exon.start +1) + "\t" +
                                 str(exon.end +1) + "\t" + "." + "\t" + gene.strand + "\t" + "." + "\t" +
-                                "Parent=" + tran.id[3:]+";" + "exon_id=" + str(exon.id) + ";" + exon.status + "\n")
+                                "Parent=" + tran.id+";" + "exon_id=" + str(exon.id) + ";" + exon.status + "\n")
                         for CDS in exon.CDS:
                             CDS_list.append(CDS)
                 for CDS in CDS_list:
                     if CDS.start != -1 and CDS.end != -1 :
                         f.write(chrm + "\t" + exon.source + "\t" + "CDS" + "\t" + str(CDS.start + 1) + "\t"
                                 + str(CDS.end +1 ) + "\t" + "." + "\t" + gene.strand + "\t" + CDS.frame +
-                                "\t" + "Parent="+tran.id[3:]+";" + CDS.status + "\n")
+                                "\t" + "Parent="+tran.id+";" + CDS.status + "\n")
 
 # Aggregate the mappings of each exon into transcripts and genes and label them as complete or incomplete
 def add_gene_and_tran_coords(gene, original_gene):

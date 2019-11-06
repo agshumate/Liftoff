@@ -259,7 +259,7 @@ def create_coordinate_conversion(records, aligned_list, gff, attempt, failed_fil
                                                                                       gff, aligned_list)
                 query_to_target = np.zeros(shape=(record.query_length, len(valid_alignments)))
                 alignment_types = np.zeros(shape=(record.query_length, len(valid_alignments)))+2
-                aligned_chr = alignment.hit_def
+                aligned_chr = alignment.hit_def.split()[0]
                 for hsp in valid_alignments:
                     add_to_map(hsp,  query_to_target, hsp_num, alignment_types)
                     hsp_num += 1

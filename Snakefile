@@ -20,7 +20,7 @@ rule all:
 
 rule convert_gtf:
 	input:
-		"{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA."+GFF[:-3]
+		"{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA."+GFF[-3:]
 	output: 
 		temp("{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA.gff")
 	conda:
@@ -29,14 +29,23 @@ rule convert_gtf:
 		"gffread -O {input} -o {output}"
 
 	
-				
+rule reformat_gff:
+	input:
+		'{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA.gff'
+	output:
+		temp('{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA_reformatted.gff'),
+		temp('{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA_warnings.log'),
+		temp('{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA_failed')
+	script:
+		'scripts/reformat_gff.py'
+						
 
 rule parse_gff:
 	input:
 		GFF
 	
 	output:
-		"{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA."+GFF[:-3]
+		temp("{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA."+GFF[-3:])
 	
 	run:
 		f=open(input[0],'r')
@@ -99,7 +108,7 @@ rule build_blast_dbs:
 
 rule create_bedfiles:	
 	input:
-		'{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA.gff'
+		'{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA_reformatted.gff'
 	output:	
 		temp('{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA_genes.bed')
 	shell:
@@ -127,7 +136,7 @@ rule run_blast:
 	params:
 		blastdb='{original_chrom}_to_{new_chrom}/{new_chrom}_genomeB.blastdb'
 	output:
-		'{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA_to_{new_chrom}_genomeB.xml'
+		temp('{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA_to_{new_chrom}_genomeB.xml')
 
 	shell:
 		'blastn -out {output} -outfmt 5 -query {input.gff} -db {params.blastdb} -word_size {WORD_SIZE} -soft_masking false -culling_limit 5 -dust no -gapopen 3 -gapextend 1 -xdrop_gap_final 300'
@@ -135,7 +144,7 @@ rule run_blast:
 rule lift_genes:
 	input: 
 		'{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA_to_{new_chrom}_genomeB.xml', 
-		'{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA.gff'
+		'{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA_reformatted.gff'
 	output:
 		'{original_chrom}_to_{new_chrom}/{new_chrom}_genomeB.gff',
 		'{original_chrom}_to_{new_chrom}/{new_chrom}_genomeB_failed',
