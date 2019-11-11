@@ -18,8 +18,8 @@ def match_CDS_to_exon(CDS_start, CDS_end, gene_list, log):
 
 def add_transcript(gene_list,chrm, source, start, end, strand, desc, log):
     tran_name = (desc.split("ID=")[1]).split(";")[0]
-    if "Parent=" in desc:
-        parent_name = (desc.split("Parent=")[1]).split(";")[0]
+    if "locus=" in desc:
+        parent_name = (desc.split("locus=")[1]).split(";")[0]
     elif "geneID" in desc:
         parent_name = (desc.split("geneID=")[1]).split(";")[0]
     if parent_name not in gene_list.keys():
@@ -66,11 +66,11 @@ def get_genes_to_lift(file, warnings_file):
     for line in lines:
         if line[0] != "#": #skip header lines
             line = line.rstrip().split("\t")
-            # if line[feature] == "gene":
+            # if line[feature] == "locus":
             #     gene_name = (line[desc].split("ID=")[1]).split(";")[0]
             #     current_gene = gff.Gene(line[chrm], gene_name,
             #                             int(line[start])-1, int(line[end])-1, [], line[strand], "complete", line[source])
-            #     gene_list[current_gene.name] = current_gene
+                #gene_list[current_gene.name] = current_gene
             if line[feature] == "transcript" or line[feature] == "mRNA":
                 exon_id = 0
                 add_transcript(gene_list,line[chrm], line[source], line[start], line[end], line[strand],  line[desc], log)

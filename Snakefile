@@ -26,19 +26,8 @@ rule convert_gtf:
 	conda:
 		'envs/gffread.yaml'
 	shell:
-		"gffread -O {input} -o {output}"
+		"gffread -M {input} -o {output}"
 
-	
-rule reformat_gff:
-	input:
-		'{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA.gff'
-	output:
-		temp('{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA_reformatted.gff'),
-		temp('{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA_warnings.log'),
-		temp('{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA_failed')
-	script:
-		'scripts/reformat_gff.py'
-						
 
 rule parse_gff:
 	input:
@@ -57,39 +46,41 @@ rule parse_gff:
 				of.write(line)
 					
 
-rule convert_fasta_to_single_line_fasta:
+rule index_fasta:
 	input:
-		new=NEW_FASTA,
-		old=ORIGINAL_FASTA
+		old=ORIGINAL_FASTA,
+		new=NEW_FASTA
+
+		
 	output:
-		new=temp('single_line_'+ NEW_FASTA),
-		old=temp('single_line_'+ ORIGINAL_FASTA)
+		old=ORIGINAL_FASTA + ".fai",
+		new=NEW_FASTA + ".fai"
+	conda:
+		"envs/samtools.yaml"
 	shell:
 		"""
-		awk '/^>/ {{printf("\\n%s\\n",$0);next; }} {{ printf("%s",$0);}}  END {{printf("\\n");}}' < {input.new} > {output.new}
-		awk '/^>/ {{printf("\\n%s\\n",$0);next; }} {{ printf("%s",$0);}}  END {{printf("\\n");}}' < {input.old} > {output.old}
+		samtools faidx {input.old}
+		samtools faidx {input.new}
 		"""
 
 rule split_chrms:
 	input:
-		old='single_line_' + ORIGINAL_FASTA,
-		new='single_line_' + NEW_FASTA
+		old=ORIGINAL_FASTA,
+		new=NEW_FASTA,
+		new_index=NEW_FASTA + ".fai",
+		old_index = ORIGINAL_FASTA + ".fai"
+	output:
+		new='{original_chrom}_to_{new_chrom}/{new_chrom}_genomeB.fa',
+		old='{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA.fa'
+	conda:
+		"envs/samtools.yaml"
+	shell:
+		"""
+		samtools faidx {input.old} {wildcards.original_chrom} > {output.old}
+		samtools faidx {input.new} {wildcards.new_chrom} > {output.new}
+		"""
 
 		
-	output:
-		old=temp('{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA.fa'),
-		new=temp('{original_chrom}_to_{new_chrom}/{new_chrom}_genomeB.fa')
-	run:
-		for i in range(len(input)):	
-			lines = open(input[i],'r').readlines()
-			outfile=open(output[i],'w')
-			for j in range (1,len(lines)):
-				line = lines[j].strip()	
-				if line == ">" + wildcards[i] or line.split()[0] == ">" + wildcards[i]:
-					outfile.write(line + "\n")
-					outfile.write(lines[j+1])
-			
-
 rule build_blast_dbs:
 	input:
 		'{original_chrom}_to_{new_chrom}/{new_chrom}_genomeB.fa'
@@ -108,11 +99,11 @@ rule build_blast_dbs:
 
 rule create_bedfiles:	
 	input:
-		'{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA_reformatted.gff'
+		'{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA.gff'
 	output:	
 		temp('{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA_genes.bed')
 	shell:
-		"""awk '{{if($3 == "gene"){{print}}}}' {input} |  awk -F "ID=" '{{print $1"\t"$2}}' | awk -F ";" '{{print $1}}' | awk '{{print $0"\t"$5-$4}}' | sort -nrk10,10| awk '{{print $1"\\t"$4-1"\\t"$5"\\t"$9"\\t"$6"\\t"$7}}' > {output}"""
+		"""awk '{{if($3 == "locus"){{print}}}}' {input} |  awk -F "ID=" '{{print $1"\t"$2}}' | awk -F ";" '{{print $1}}' | awk '{{print $0"\t"$5-$4}}' | sort -nrk10,10| awk '{{print $1"\\t"$4-1"\\t"$5"\\t"$9"\\t"$6"\\t"$7}}' > {output}"""
 
 rule extract_gene_seqs:
 	input:
@@ -144,7 +135,7 @@ rule run_blast:
 rule lift_genes:
 	input: 
 		'{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA_to_{new_chrom}_genomeB.xml', 
-		'{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA_reformatted.gff'
+		'{original_chrom}_to_{new_chrom}/{original_chrom}_genomeA.gff'
 	output:
 		'{original_chrom}_to_{new_chrom}/{new_chrom}_genomeB.gff',
 		'{original_chrom}_to_{new_chrom}/{new_chrom}_genomeB_failed',
