@@ -1,5 +1,5 @@
 gff: gff3_or_gtf_to_be_lifted 
-output_format: gtf_or_gff3
+output_format: gtf_or_gff
 original_chroms: original_chroms.txt
 new_chroms: new_chroms.txt
 original_fasta: original_genome_assembly.fa 
