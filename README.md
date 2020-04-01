@@ -5,7 +5,7 @@ Liftoff is tool to lift over gff3/gtf annotations from one chromosome-level geno
 ### Getting Started
 
 #### Step 1:
-Liftoff requires commandline BLAST which can ben installed [here] (https://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download). It can also be installed with conda with the following command
+Liftoff requires commandline BLAST which can ben installed [here](https://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download). It can also be installed with conda with the following command
 
 ```
 conda install -c bioconda blast
@@ -26,26 +26,29 @@ python setup.py install
 
 ### USAGE
 ```
-usage: liftoff.py [-h] -g gff_or_gtf -t target_fasta -r reference_fasta
-                  [-target_chroms target_chroms.txt]
-                  [-ref_chroms reference_chroms.txt] [-p num_processess]
-                  [-o out_file] [-w blast_word_size]
-                  [-unplaced unplaced_sequence] [-copy_num]
+usage: liftoff.py [-h] -g <annotations.gff> -t <target_fasta.fa> -r
+                  <reference_fasta.fa> [-target_chroms <target_chroms.txt>]
+                  [-ref_chroms <reference_chroms.txt>] [-p num_processess]
+                  [-o <target.gff>] [-w blast_word_size]
+                  [-unplaced <unplaced_seqids.txt>] [-copy_num]
 
 Lift genes
 
 optional arguments:
   -h, --help            show this help message and exit
-  -g gff_or_gtf         annotation file to lift over in gff or gtf format
-  -t target_fasta       target fasta genome to lift genes to
-  -r reference_fasta    reference fasta genome to lift genes from
-  -target_chroms        file with name of chromosomes to be lifted to
-  -ref_chroms           file with name of chromosomes to be lifted from
+  -g <annotations.gff>  annotation file to lift over in gff or gtf format
+  -t <target_fasta.fa>  target fasta genome to lift genes to
+  -r <reference_fasta.fa>
+                        reference fasta genome to lift genes from
+  -target_chroms <target_chroms.txt>
+                        file with name of chromosomes to be lifted to
+  -ref_chroms <reference_chroms.txt>
+                        file with name of chromosomes to be lifted from
   -p num_processess     processes
-  -o out_file           output gff file
+  -o <target.gff>       output file
   -w blast_word_size    word size for blast step
-  -unplaced unplaced_sequence
-                        file with unplaced sequence names. Genes annotated on
+  -unplaced <unplaced_seqids.txt>
+                        file with unplaced sequence names.Genes annotated on
                         these sequences will be mapped onto the main assembly
   -copy_num             look for additional copies of genes after the
                         annotation has been lifted over
