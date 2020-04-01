@@ -1,4 +1,0 @@
-channels:
-        - bioconda
-dependencies:
-        - bedtools=2.29.0
