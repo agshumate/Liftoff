@@ -20,7 +20,9 @@ git clone https://github.com/agshumate/Liftoff liftoff
 ```
 
 #### Step 3:
+
 ```
+cd liftoff
 python setup.py install
 ```
 
