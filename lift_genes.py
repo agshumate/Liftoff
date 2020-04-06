@@ -20,7 +20,7 @@ def extact_and_align_genes(target_fasta, reference_fasta, old_chrms, new_chrms, 
 
 
 def build_gene_database(gff):
-    gene_db = gffutils.create_db(gff, gff + "_db", merge_strategy="create_unique", force=True,disable_infer_transcripts=True,disable_infer_gene=True)
+    gene_db = gffutils.create_db(gff, gff + "_db", merge_strategy="create_unique", force=True,disable_infer_transcripts=True,disable_infer_genes=True)
     return gene_db
 
 
