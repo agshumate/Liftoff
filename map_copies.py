@@ -5,7 +5,7 @@ from check_homologues import check_homologues
 def find_extra_copies(target_fasta, reference_fasta, processes, word_size, final_feature_list, gene_db, old_chroms, full_db_name):
     for feature in final_feature_list:
         for value in final_feature_list[feature]:
-            if value.featuretype == "gene":
+            if "Parent" not in value.attributes:
                 value.score = -1
     all_extra_copies = lg.extact_and_align_genes(target_fasta, reference_fasta, old_chroms, ['all'], processes, word_size,
                                                  gene_db, "copies", False)

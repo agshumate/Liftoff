@@ -6,7 +6,7 @@ import gffutils
 def map_unplaced_seqs(target_fasta, reference_fasta, processes, word_size, final_feature_list, gene_db, old_chroms, full_db_name):
     for feature in final_feature_list:
         for value in final_feature_list[feature]:
-            if value.featuretype == "gene":
+            if "Parent" not in value.attributes:
                 value.score = -1
     unplaced_features = []
     for seq in old_chroms:
