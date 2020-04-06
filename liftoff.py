@@ -9,16 +9,16 @@ import map_copies
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Lift genes')
-    parser.add_argument('-g', required=True, metavar="<annotations.gff>", help="annotation file to lift over in gff or gtf format" )
-    parser.add_argument('-t', required=True, metavar = "<target_fasta.fa>", help="target fasta genome to lift genes to")
-    parser.add_argument('-r', required=True, metavar= "<reference_fasta.fa>", help = "reference fasta genome to lift genes from")
-    parser.add_argument('-target_chroms', required=False, metavar = "<target_chroms.txt>", help="file with name of chromosomes to be lifted to")
-    parser.add_argument('-ref_chroms', required=False, metavar = "<reference_chroms.txt>", help="file with name of chromosomes to be lifted from")
+    parser.add_argument('-g', required=True, metavar="gff_or_gtf", help="annotation file to lift over in gff or gtf format" )
+    parser.add_argument('-t', required=True, metavar = "target_fasta", help="target fasta genome to lift genes to")
+    parser.add_argument('-r', required=True, metavar= "reference_fasta", help = "reference fasta genome to lift genes from")
+    parser.add_argument('-target_chroms', required=False, metavar = "target_chroms", help="file with name of chromosomes to be lifted to")
+    parser.add_argument('-ref_chroms', required=False, metavar = "reference_chroms", help="file with name of chrosomosomes to be lifted from")
     parser.add_argument('-p', required=False, metavar ="num_processess", help= "processes", default=1)
-    parser.add_argument('-o', required=False, metavar= "<target.gff>", help="output file", default = 'stdout')
+    parser.add_argument('-o', required=False, metavar= "out_file", help="output file", default = 'stdout')
     parser.add_argument('-w', required=False, metavar = "blast_word_size", help="word size for blast step", default =50)
-    parser.add_argument('-unplaced', required=False, metavar="<unplaced_seqids.txt>", help="file with unplaced sequence names.Genes annotated on these sequences will be mapped onto the main assembly ")
-    parser.add_argument('-copy_num',  action='store_true', required=False, help="look for additional copies of genes after the annotation has been lifted over")
+    parser.add_argument('-unplaced', required=False, metavar="unplaced_sequence", help="file with unplaced sequence names to map onto main assembly")
+    parser.add_argument('-copy_num',  action='store_true', required=False, help="look for additional copies of genes in the annotation")
     args = parser.parse_args()
     return args
 
@@ -63,7 +63,7 @@ def main():
         features_with_copy_nums, unmapped_genes = map_copies.find_extra_copies(target_fasta, reference_fasta, processes, word_size, features_with_unplaced, gene_db, old_chroms, gff + "_db")
     else:
         features_with_copy_nums = features_with_unplaced
-    write_new_gff(features_with_copy_nums, output)
+    write_new_gff(features_with_copy_nums, output, gene_db)
 
 main()
 

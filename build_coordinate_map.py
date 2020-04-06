@@ -5,10 +5,10 @@ def build_coordinate_map(exon_alignments, gene, gene_db):
     query_length = gene.end - gene.start + 1
     coordinate_map = np.zeros(shape=(query_length, len(exon_alignments)))
     alignment_score_map = np.zeros(shape=(query_length, len(exon_alignments))) + 2
-    alignment_score_weights = build_weight_map(query_length, gene, gene_db)
+    #alignment_score_weights = build_weight_map(query_length, gene, gene_db)
     for i in range(len(exon_alignments)):
         add_hsp_to_map(exon_alignments[i][0], coordinate_map, alignment_score_map, i)
-    return coordinate_map, alignment_score_map * alignment_score_weights
+    return coordinate_map, alignment_score_map
 
 
 def add_hsp_to_map(hsp, query_to_target, alignment_scores, hsp_num):
@@ -45,15 +45,15 @@ def adjust_coordinates_for_gaps(query_to_target, alignment_scores, subject_gaps,
         alignment_scores[q_start + mismatch-query[0:mismatch].count("-"), hsp_num] = 1
 
 
-def build_weight_map(query_length, gene, gene_db):
-    weight_map = np.zeros(shape=(query_length ,1)) + 1
-    all_exons, all_cds = pba.get_exons_and_cds(gene_db, gene)
-    for exon in all_exons:
-        cds_list = pba.find_cds(exon, all_cds)
-        for cds in cds_list:
-            adjust_cds_weight(cds, gene, query_length, weight_map)
-    adjust_start_and_stop_codon_weights(weight_map)
-    return weight_map
+# def build_weight_map(query_length, gene, gene_db):
+#     weight_map = np.zeros(shape=(query_length ,1)) + 1
+#     all_exons, all_cds = pba.get_exons_and_cds(gene_db, gene)
+#     for exon in all_exons:
+#         cds_list = pba.find_cds(exon, all_cds)
+#         for cds in cds_list:
+#             adjust_cds_weight(cds, gene, query_length, weight_map)
+#     adjust_start_and_stop_codon_weights(weight_map)
+#     return weight_map
 
 
 

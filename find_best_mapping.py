@@ -6,7 +6,7 @@ import numpy as np
 
 
 def find_best_mapping(coordinate_map, alignment_scores, gene_db, gene, exon_alignments, coords_to_exclude, weight_threshold):
-    unique_exons = pba.find_unique_exons(gene_db, gene)
+    unique_exons = pba.find_children(gene_db, gene)
     node_dict, exon_graph = intialize_graph()
     mapped_exons = {}
     for i in range(len(unique_exons)):
@@ -24,9 +24,9 @@ def find_best_mapping(coordinate_map, alignment_scores, gene_db, gene, exon_alig
     else:
         add_mapping = False
     if add_mapping:
-        for node_name in shortest_path:
+        for node_name in shortest_path[1:-1]:
             node = node_dict[node_name]
-            mapped_exons[str(node.original_start) + ":" + str(node.original_end)] = node
+            mapped_exons[node.id] = node
     return mapped_exons, shortest_path_weight
 
 
@@ -52,7 +52,7 @@ def prune_graph(exon_graph, node_dict):
 def intialize_graph():
     exon_graph = nx.DiGraph()
     node_dict = {}
-    node_dict["0.0"] = lifted_exon.exon_node("start", -1, -1, None, -1, -1, [])
+    node_dict["0.0"] = lifted_exon.exon_node("start", -1, -1, None, -1, -1, [], "start")
     exon_graph.add_node("0.0")
     return node_dict, exon_graph
 
@@ -110,7 +110,7 @@ def add_exon_node(exon_num, alignment_num, node_dict, exon_graph, exon_coords, h
     else:
         is_valid_mapping = False
     if is_valid_mapping:
-        new_exon_node = lifted_exon.exon_node(target_chrm, lifted_exon_start, lifted_exon_end, strand, exon.start, exon.end, exon_coords)
+        new_exon_node = lifted_exon.exon_node(target_chrm, lifted_exon_start, lifted_exon_end, strand, exon.start, exon.end, exon_coords, exon.id)
         node_dict[node_key] = new_exon_node
         exon_graph.add_node(node_key)
     return node_key, is_valid_mapping, exon_scores
@@ -200,6 +200,8 @@ def is_adjacent(previous_node, current_node, exon_num, previous_node_name, curre
                                                                                      current_node.lifted_start,
                                                                                      current_node.lifted_end) <= 0:
         return False
+    elif previous_node.original_start == current_node.original_start and previous_node.original_end == current_node.original_end and (previous_node.lifted_start != current_node.lifted_start or previous_node.lifted_end!=current_node.lifted_end):
+        return False
     elif intron_exclusion(coords_to_exclude, previous_node, current_node):
         return False
     elif gene.strand == previous_node.strand and previous_node.lifted_start <= current_node.lifted_start:
@@ -256,7 +258,7 @@ def find_skipped_exons_penalty(previous_node_name, current_node_name, unique_exo
 
 def add_target_node(node_dict, exon_graph, num_exons, gene, unique_exons):
     node_key = str(num_exons +1) + ".0"
-    node_dict[node_key] = lifted_exon.exon_node("end", -1, -1, None, -1, -1, [])
+    node_dict[node_key] = lifted_exon.exon_node("end", -1, -1, None, -1, -1, [], "end")
     exon_graph.add_node(node_key)
     adjacent_nodes = find_adjacent_nodes(node_dict, num_exons + 1 , node_key, exon_graph, gene, [])
     for node in adjacent_nodes:

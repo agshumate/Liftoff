@@ -1,5 +1,5 @@
 import gffutils
-from process_blast_alignments import  find_cds, exon_has_cds, find_unique_exons
+from process_blast_alignments import  find_cds, exon_has_cds, find_children
 from find_best_mapping import find_boundary_coords
 
 
@@ -150,7 +150,7 @@ def build_new_gene(transcript_list, gene, gene_db, path_weight, threshold, gene_
 
 
 def calculate_gene_score(shortest_path_length, gene, gene_db):
-    unique_exons = find_unique_exons(gene_db, gene)
+    unique_exons = find_children(gene_db, gene)
     exon_lengths = [exon.end - exon.start for exon in unique_exons]
     total_length = sum(exon_lengths)
     return shortest_path_length/total_length

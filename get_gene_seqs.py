@@ -4,14 +4,23 @@ def get_seq(fasta, genes, index):
     return ">"+ gene.id + "\n" + gene.sequence(fasta, use_strand=True) + "\n"
 
 
-def get_all_seqs_for_chrm(gene_db, fasta, chrm_name):
-    fasta_out = open(chrm_name + '_genes.fa', 'w')
-    if chrm_name != "all":
-        genes = list(gene_db.region(seqid = chrm_name, featuretype="gene"))
+def get_parent_features(gene_db, chrm_name):
+    parent_features = []
+    if chrm_name != 'all':
+        all_feature_list = gene_db.region(seqid=chrm_name)
     else:
-        genes = list(gene_db.features_of_type(featuretype="gene"))
-    for gene in genes:
-        fasta_out.write(">"+ gene.id + "\n" + gene.sequence(fasta, use_strand=True) + "\n")
+        all_feature_list = gene_db.all_features()
+    for feature in all_feature_list:
+        if len(list(gene_db.parents(feature))) == 0 and feature.featuretype!="region":
+            parent_features.append(feature)
+    return parent_features
+
+
+def get_all_seqs_for_chrm(gene_db,fasta, chrm_name):
+    fasta_out = open(chrm_name + '_genes.fa', 'w')
+    parent_features = get_parent_features(gene_db, chrm_name)
+    for feature in parent_features:
+        fasta_out.write(">"+ feature.id + "\n" + feature.sequence(fasta, use_strand=True) + "\n")
 
 
 

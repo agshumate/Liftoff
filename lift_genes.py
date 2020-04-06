@@ -6,7 +6,7 @@ from functools import partial
 import gffutils
 from process_blast_alignments import process_alignments
 from build_coordinate_map import build_coordinate_map
-from build_lifted_gene_model import build_lifted_gene_model
+from merge_lifted_features import  merge_lifted_features
 from find_best_mapping import find_best_mapping
 import numpy as np
 
@@ -47,20 +47,22 @@ def lift_genes(gene_db_name,  exclude_criteria, threshold, weight_threshold, bla
     query_num = 0
     for blast_record in blast_records:
         query_num += 1
-        new_gene_name = blast_record.query
-        copy_tag_len = len(new_gene_name.split("_")[-1])
-        original_gene_name = new_gene_name[:-copy_tag_len-1]
-        if new_gene_name in exclude_criteria:
-            criteria = exclude_criteria[new_gene_name]
+        #print(query_num)
+        new_parent_name = blast_record.query
+        #print(new_parent_name)
+        copy_tag_len = len(new_parent_name.split("_")[-1])
+        original_parent_name = new_parent_name[:-copy_tag_len-1]
+        if new_parent_name in exclude_criteria:
+            criteria = exclude_criteria[new_parent_name]
         else:
             criteria = []
-        gene = gene_db[original_gene_name]
-        exon_alignments = process_alignments(blast_record, gene_db, gene)
+        parent = gene_db[original_parent_name]
+        exon_alignments = process_alignments(blast_record, gene_db, parent)
         if len(exon_alignments) > 0:
-            coordinate_map, alignment_scores = build_coordinate_map(exon_alignments, gene, gene_db)
-            mapped_exons, shortest_path_weight = find_best_mapping(coordinate_map, alignment_scores, gene_db, gene,
+            coordinate_map, alignment_scores = build_coordinate_map(exon_alignments, parent, gene_db)
+            mapped_exons, shortest_path_weight = find_best_mapping(coordinate_map, alignment_scores, gene_db, parent,
                                                                     exon_alignments, criteria, weight_threshold)
-            features[new_gene_name] = build_lifted_gene_model(mapped_exons, shortest_path_weight, gene_db, gene, unmapped_genes, threshold, new_gene_name)
+            features[new_parent_name] = merge_lifted_features(mapped_exons, shortest_path_weight, gene_db, parent, unmapped_genes, threshold, new_parent_name)
         else:
-            unmapped_genes.append(gene)
+            unmapped_genes.append(parent)
     return features, unmapped_genes

@@ -1,18 +1,18 @@
-def process_alignments(blast_record, gene_db, gene):
+def process_alignments(blast_record, gene_db, parent):
     exon_alignments = []
     if len(blast_record.alignments) != 0:
-        exon_alignments = find_exon_containing_alignments(blast_record.alignments, gene_db, gene)
+        exon_alignments = find_children_containing_alignments(blast_record.alignments, gene_db, parent)
     return exon_alignments
 
 
 
-def find_exon_containing_alignments(alignments, gene_db, gene):
+def find_children_containing_alignments(alignments, gene_db, parent):
     exon_alignments = []
-    unique_exons = find_unique_exons(gene_db, gene)
+    unique_exons = find_children(gene_db, parent)
     for alignment in alignments:
         target_chrm = alignment.hit_def.split()[0]
         for hsp in alignment.hsps:
-            if contains_exon(unique_exons,  gene, hsp.query_start, hsp.query_end):
+            if contains_exon(unique_exons, parent, hsp.query_start, hsp.query_end):
                 exon_alignments.append((hsp, target_chrm))
     return exon_alignments
 
@@ -22,18 +22,17 @@ def get_exons_and_cds(gene_db, gene):
     return all_exons, all_cds
 
 
-def find_unique_exons(gene_db, gene):
-    all_exons, all_cds = get_exons_and_cds(gene_db, gene)
-    unique_exons_dict = {}
-    for exon in all_exons:
-        exon_key = str(exon.start) + ":" + str(exon.end)
-        if exon_key not in unique_exons_dict:
-            unique_exons_dict[exon_key] = exon
-        elif exon_has_cds(find_cds(unique_exons_dict[exon_key], all_cds)) is False and exon_has_cds(find_cds(exon, all_cds)) is True:
-            unique_exons_dict[exon_key] = exon
-    unique_exons = list(unique_exons_dict.values())
-    unique_exons.sort(key=lambda x: (int(x.start), int(x.end)))
-    return unique_exons
+def find_children(gene_db, parent):
+    lowest_children=[]
+    all_children = gene_db.children(parent)
+    for child in all_children:
+        if len(list(gene_db.children(child))) == 0:
+            lowest_children.append(child)
+
+    if len(lowest_children) == 0:
+        lowest_children.append(parent)
+    lowest_children.sort(key=lambda x: (int(x.start), int(x.end)))
+    return lowest_children
 
 
 
@@ -61,14 +60,7 @@ def find_offsets(exon, gene):
     return start_offset, end_offset
 
 
-def find_cds(exon, all_cds):
-    cds_list = []
-    for cds in all_cds:
-        if cds.start >= exon.start and cds.end <= exon.end:
-            cds_list.append(cds)
-    return cds_list
 
 
 
-def exon_has_cds(cds_list):
-    return len(cds_list) > 0
+
