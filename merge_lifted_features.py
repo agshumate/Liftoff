@@ -2,29 +2,23 @@ import process_blast_alignments as pba
 import gffutils
 
 
-def get_feature_order(gene_db):
-    feature_types = list(gene_db.featuretypes())
-    index = 0
-    feature_order = {}
-    if 'exon' in feature_types:
-        feature_order['exon'] = index
-        index += 1
-    if 'CDS' in feature_types:
-        feature_order['CDS'] = index
-        index += 1
-    for feature_type in feature_types:
-        if feature_type not in feature_order:
-            feature_order[feature_type] = index
-            index +=1
-    return feature_order
+def meets_length_threshold(feature, threshold, gene_db):
+    original_feature = gene_db[feature]
+    original_length = original_feature.end - original_feature.start
+    lifted_length = feature.end - feature.start
+    coverage = lifted_length/float(original_length)
+    feature.attributes["coverage"] = coverage
+    return coverage >= threshold
 
 
-
-def merge_lifted_features(mapped_children, shortest_path_weight, gene_db, gene, unmapped_genes, threshold, gene_name):
+def merge_lifted_features(mapped_children, shortest_path_weight, gene_db, gene, unmapped_genes, threshold, gene_name, feature_order):
     feature_list = []
     orphans=[]
+    top_feature = None
+    if len(mapped_children) == 0:
+        unmapped_genes.append(gene)
+        return []
     for child_name in mapped_children:
-        #print(child_name)
         lifted_child = mapped_children[child_name]
         if lifted_child.chrm != "start" and lifted_child.chrm!="end":
             original_child = gene_db[child_name]
@@ -37,20 +31,27 @@ def merge_lifted_features(mapped_children, shortest_path_weight, gene_db, gene, 
                 child_feature.attributes["Parent"]=parent_list[0].id
                 orphans.append((child_feature, parent_list[0]))
             else:
-                child_feature.score=shortest_path_weight
-                child_feature.attributes["copy_id"] = gene_name
+                top_feature = child_feature
     while(len(orphans) != 0):
-        orphans=create_parents(orphans, gene_db, feature_list, shortest_path_weight, gene_name)
-    feature_order = get_feature_order(gene_db)
+        orphans, top_feature=create_parents(orphans, gene_db, feature_list)
     feature_list.sort(key=lambda x: (x.seqid, x.start, feature_order[x.featuretype]))
+    if meets_length_threshold(top_feature, threshold, gene_db) is False:
+        feature_list = []
+        unmapped_genes.append(gene)
+    else:
+        top_feature.score = shortest_path_weight
+        top_feature.attributes["copy_id"] = gene_name
+        if "Parent" in top_feature.attributes:
+            del top_feature.attributes["Parent"]
     return feature_list
 
 
 
 
-def create_parents(orphans, gene_db, feature_list, shortest_path_weight, gene_name):
+def create_parents(orphans, gene_db, feature_list):
     added_parent_ids = []
     new_orphans=[]
+    top_feature = None
     for orphan, parent in orphans:
         if parent.id not in added_parent_ids:
             #print(parent.id)
@@ -68,10 +69,9 @@ def create_parents(orphans, gene_db, feature_list, shortest_path_weight, gene_na
                 parent_feature.attributes["Parent"]=new_parent_list[0].id
                 new_orphans.append((parent_feature, new_parent_list[0]))
             else:
-                parent_feature.score=shortest_path_weight
-                parent_feature.attributes["copy_id"] = gene_name
+                top_feature = parent_feature
             added_parent_ids.append(parent.id)
-    return new_orphans
+    return new_orphans, top_feature
 
 
 

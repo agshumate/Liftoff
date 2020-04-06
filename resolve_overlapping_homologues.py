@@ -16,7 +16,7 @@ def add_to_exclusion_criteria(remap_genes, remap_gene, exclude_criteria):
                                          exclude_seq, exclude_strand)]
 
 
-def resolve_overlapping_homologues(all_records, feature_list, remap_genes,  unmapped_genes, db_name, processes, threshold, weight_threshold):
+def resolve_overlapping_homologues(all_records, feature_list, remap_genes,  unmapped_genes, db_name, processes, threshold, weight_threshold, gene_db):
     exclude_criteria = {}
     while len(remap_genes) > 0:
         blast_records_array = {}
@@ -24,7 +24,7 @@ def resolve_overlapping_homologues(all_records, feature_list, remap_genes,  unma
             del feature_list[remap_gene]
             blast_records_array[remap_gene] = all_records[remap_gene]
             add_to_exclusion_criteria(remap_genes, remap_gene, exclude_criteria)
-        feature_list_remapped, unmapped_genes_remapped = lg.lift_all_genes(processes, db_name, blast_records_array, exclude_criteria, threshold, weight_threshold)
+        feature_list_remapped, unmapped_genes_remapped = lg.lift_all_genes(processes, db_name, blast_records_array, exclude_criteria, threshold, weight_threshold, gene_db)
         feature_list.update(feature_list_remapped)
         unmapped_genes.extend(unmapped_genes_remapped)
         clean_exclude_criteria(feature_list, exclude_criteria)

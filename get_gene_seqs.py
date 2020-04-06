@@ -7,11 +7,12 @@ def get_seq(fasta, genes, index):
 def get_parent_features(gene_db, chrm_name):
     parent_features = []
     if chrm_name != 'all':
-        all_feature_list = gene_db.region(seqid=chrm_name)
+        all_feature_list = list(gene_db.region(seqid=chrm_name))
     else:
-        all_feature_list = gene_db.all_features()
+        all_feature_list = list(gene_db.all_features())
+    feature_ids = [feature.id for feature in all_feature_list]
     for feature in all_feature_list:
-        if len(list(gene_db.parents(feature))) == 0 and feature.featuretype!="region":
+        if ("Parent" not in feature.attributes or feature["Parent"][0] not in feature_ids) and feature.featuretype!="region":
             parent_features.append(feature)
     return parent_features
 

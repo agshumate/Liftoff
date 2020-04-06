@@ -9,10 +9,10 @@ def find_extra_copies(target_fasta, reference_fasta, processes, word_size, final
                 value.score = -1
     all_extra_copies = lg.extact_and_align_genes(target_fasta, reference_fasta, old_chroms, ['all'], processes, word_size,
                                                  gene_db, "copies", False)
-    copies_lifted, unmapped_genes = lg.lift_all_genes(processes, full_db_name, all_extra_copies, {}, 1.0, 0.0)
+    copies_lifted, unmapped_genes = lg.lift_all_genes(processes, full_db_name, all_extra_copies, {}, 1.0, 0.0, gene_db)
     final_feature_list.update(copies_lifted)
     remap_genes = check_homologues(copies_lifted, final_feature_list, full_db_name, processes)
     final_features_with_copies = resolve_overlapping_homologues(all_extra_copies, final_feature_list,
                                                                   remap_genes,  unmapped_genes, full_db_name,
-                                                                  processes, 1.0, 0.0)
+                                                                  processes, 1.0, 0.0, gene_db)
     return final_features_with_copies, unmapped_genes

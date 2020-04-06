@@ -11,6 +11,22 @@ from find_best_mapping import find_best_mapping
 import numpy as np
 
 
+def get_feature_order(gene_db):
+    feature_types = list(gene_db.featuretypes())
+    index = 0
+    feature_order = {}
+    if 'exon' in feature_types:
+        feature_order['exon'] = index
+        index += 1
+    if 'CDS' in feature_types:
+        feature_order['CDS'] = index
+        index += 1
+    for feature_type in feature_types:
+        if feature_type not in feature_order:
+            feature_order[feature_type] = index
+            index +=1
+    return feature_order
+
 def extact_and_align_genes(target_fasta, reference_fasta, old_chrms, new_chrms, processes, word_size, gene_db, search_type, build_db):
     if build_db:
         build_all_databases(target_fasta, processes)
@@ -24,9 +40,10 @@ def build_gene_database(gff):
     return gene_db
 
 
-def lift_all_genes(processes, db_name, all_records, exclude_criteria, threshold, weight_threshold):
+def lift_all_genes(processes, db_name, all_records, exclude_criteria, threshold, weight_threshold, gene_db):
     pool = Pool(processes)
-    func = partial(lift_genes, db_name, exclude_criteria, threshold, weight_threshold)
+    feature_order = get_feature_order(gene_db)
+    func = partial(lift_genes, db_name, exclude_criteria, threshold, weight_threshold, feature_order)
     feature_list = {}
     all_unmapped = []
     blast_records_array = np.array(list(all_records.values()))
@@ -40,16 +57,14 @@ def lift_all_genes(processes, db_name, all_records, exclude_criteria, threshold,
 
 
 
-def lift_genes(gene_db_name,  exclude_criteria, threshold, weight_threshold, blast_records):
+def lift_genes(gene_db_name,  exclude_criteria, threshold, weight_threshold, feature_order, blast_records):
     gene_db = gffutils.FeatureDB(gene_db_name)
     features = {}
     unmapped_genes = []
     query_num = 0
     for blast_record in blast_records:
         query_num += 1
-        #print(query_num)
         new_parent_name = blast_record.query
-        #print(new_parent_name)
         copy_tag_len = len(new_parent_name.split("_")[-1])
         original_parent_name = new_parent_name[:-copy_tag_len-1]
         if new_parent_name in exclude_criteria:
@@ -62,7 +77,7 @@ def lift_genes(gene_db_name,  exclude_criteria, threshold, weight_threshold, bla
             coordinate_map, alignment_scores = build_coordinate_map(exon_alignments, parent, gene_db)
             mapped_exons, shortest_path_weight = find_best_mapping(coordinate_map, alignment_scores, gene_db, parent,
                                                                     exon_alignments, criteria, weight_threshold)
-            features[new_parent_name] = merge_lifted_features(mapped_exons, shortest_path_weight, gene_db, parent, unmapped_genes, threshold, new_parent_name)
+            features[new_parent_name] = merge_lifted_features(mapped_exons, shortest_path_weight, gene_db, parent, unmapped_genes, threshold, new_parent_name, feature_order)
         else:
             unmapped_genes.append(parent)
     return features, unmapped_genes
