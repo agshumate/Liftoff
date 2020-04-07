@@ -1,5 +1,0 @@
-channels:
-        - bioconda
-dependencies:
-        - blast=2.9.0
-       

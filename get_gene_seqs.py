@@ -1,5 +1,11 @@
 
+<<<<<<< HEAD
 
+=======
+def get_seq(fasta, genes, index):
+    gene = genes[index]
+    return ">"+ gene.id + "\n" + gene.sequence(fasta, use_strand=True) + "\n"
+>>>>>>> d5e2965468bb302f52c570bda0ab3d92e52c0da1
 
 
 def get_parent_features(gene_db, chrm_name):
