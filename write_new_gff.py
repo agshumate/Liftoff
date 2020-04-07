@@ -3,11 +3,7 @@ def write_line(line, out_file):
     if out_file == "stdout":
         print(line)
     else:
-<<<<<<< HEAD
-        out_file.write(str(line))
-=======
-        out_file.write(line)
->>>>>>> d5e2965468bb302f52c570bda0ab3d92e52c0da1
+        out_file.write(str(line)) 
         out_file.write("\n")
 
 
@@ -38,11 +34,10 @@ def write_new_gff(lifted_features, out_file, gene_db):
         if parent.attributes["coverage"][0] < 0.5:
             parent.attributes["partial_mapping"] = "True"
         del parent.attributes["coverage"]
-<<<<<<< HEAD
+
         write_feature([parent], f, child_features)
-=======
-        write_feature([parent], out_file, child_features)
->>>>>>> d5e2965468bb302f52c570bda0ab3d92e52c0da1
+
+       
 
 
 
