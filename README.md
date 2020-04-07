@@ -1,17 +1,17 @@
 # Liftoff
 ## Overview
-Liftoff is a [Snakemake](https://snakemake.readthedocs.io/en/stable/) workflow to lift over gff3/gtf annotations from one chromosome-level genome assembly to another of the same species. Most lift over tools lift each interval in a gff file over seperately which often results in gene mappings that do not make sense biologically. Liftoff instead is designed to accurately map full gene sequences onto new assemblies. It can map genes onto chromsomal regions that have been rearranged in the new assemblies, as well as resolve the correct mappings of homologous genes. It takes two fasta files and the gff/gtf file to be lifted over as input and outputs a new gff/gtf file for each chromsome.
+Liftoff is tool to lift over gff3/gtf annotations from one chromosome-level genome assembly to another of the same species. Most lift over tools lift each interval in a gff file over seperately which often results in gene mappings that do not make sense biologically. Liftoff instead is designed to accurately map full gene sequences onto new assemblies. It can map genes onto chromsomal regions that have been rearranged in the new assemblies, as well as resolve the correct mappings of homologous genes. 
 
 ### Getting Started
 
 #### Step 1:
-Liftoff uses [Snakemake](https://snakemake.readthedocs.io/en/stable/) to manage the workflow and handle all dependencies. The first step to running Liftoff is therefore installing Snakemake through the Python3 version of Miniconda
+Liftoff requires commandline BLAST which can ben installed [here](https://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download). It can also be installed with conda with the following command
 
 ```
-conda install -c bioconda -c conda-forge snakemake
+conda install -c bioconda blast
 ```
 
-More information about installing Snakemake can be found [here](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html)
+
 
 #### Step 2: 
 Then clone the workflow into a working directory 
@@ -20,53 +20,40 @@ git clone https://github.com/agshumate/Liftoff liftoff
 ```
 
 #### Step 3:
-Add the original genome fasta file, the gff3/gtf file, and the new genome fasta to this directory 
-```
-mv my_original_genome.fa liftoff/
-mv my_original_genome.gff liftoff/
-mv my_new_genome.fa  liftoff/
-```
-
-#### Step 4:
-Edit 'original_chroms.txt' and 'new_chroms.txt'.  Liftoff performs the gene lift over chromosome by chromosome so it is important to tell Liftoff the names of the chromosomes in the original genome assembly and the names of the corresponding chromosomes in the new assembly. If the chromosomes have the same names in both assemblies, these files will be identical.
-
-#### Step 5:
-Edit the config.yaml file with the following information
-
-**gff**: the gtf/gff3 file that will be lifted over to the new assembly  
-**output_format**: either 'gtf' of 'gff'  
-**original_chroms**: the 'original_chroms.txt' file edited to include the correct chromosome names in the original assembly  
-**new_chroms**: the 'new_chroms.txt' file edited to include the correct chromosome names in the original assembly  
-**original_fasta**: the genome assembly (fasta format) that the genes will be lifted from   
-**new_fasta**: the genome assembly (fasta format) that the genes will be lifted to   
-**word_size**: the size of exact match the required by BLAST to align the gene sequence to the chromosome. 50 is recommended for human genomes. A smaller word size will make the BLAST alignment step slower but more sensitive . 
-
-An example config.yaml file for lifting genes over from the human genome assembly version GRCh37 to GRCh38 would be 
-```
-gff: GRCh37.gff
-output_format: gff
-original_chroms: original_chroms.txt
-new_chroms: new_chroms.txt
-original_fasta: GRCh37.fa
-new_fasta: GRCh38.fa
-word_size: 50
-```
-### Running Liftoff
-Once config.yaml, original_chroms.txt and new_chroms.txt have been edited run the Snakemake workflow with
-```
-snakemake --use-conda
-``` 
-Use the -j option to use multiple cores. For example, if you have at least a 24 core machine, you could lift over all human chromsomes in parallel by executing 
 
 ```
-snakemake --use-conda -j 24
+cd liftoff
+python setup.py install
 ```
-Snakemake has many more [options](https://snakemake.readthedocs.io/en/stable/executable.html) you can invoke depending on your machine setup 
 
-### Output
-A directory called {chromA}\_to\_{chromB} will be created in the working directory for each chromosome to chromsome liftover containing   
+### USAGE
 ```
-{chrom}_genomeB.gff: The lifted over gff or gtf  
-{chrom}_failed_genomeB: A list of genes that failed to be lifted over  
-warnings.log: A list of problems found in the original gff file such as transcripts or exons without parent features  
+usage: liftoff.py [-h] -g <annotations.gff> -t <target_fasta.fa> -r
+                  <reference_fasta.fa> [-target_chroms <target_chroms.txt>]
+                  [-ref_chroms <reference_chroms.txt>] [-p num_processess]
+                  [-o <target.gff>] [-w blast_word_size]
+                  [-unplaced <unplaced_seqids.txt>] [-copy_num]
+
+Lift genes
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -g <annotations.gff>  annotation file to lift over in gff or gtf format
+  -t <target_fasta.fa>  target fasta genome to lift genes to
+  -r <reference_fasta.fa>
+                        reference fasta genome to lift genes from
+  -target_chroms <target_chroms.txt>
+                        file with name of chromosomes to be lifted to
+  -ref_chroms <reference_chroms.txt>
+                        file with name of chromosomes to be lifted from
+  -p num_processess     processes
+  -o <target.gff>       output file
+  -w blast_word_size    word size for blast step
+  -unplaced <unplaced_seqids.txt>
+                        file with unplaced sequence names.Genes annotated on
+                        these sequences will be mapped onto the main assembly
+  -copy_num             look for additional copies of genes after the
+                        annotation has been lifted over
+ 
 ```
+The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation(gff or gtf format). For chromosome-scale assemblies, a file with a list of chromosomes in the reference genome can be provided in the file reference_chroms.txt file. The corresponding chromosomes in the target assembly should be provided in the file target_chroms.txt. If the chromosomes have the same names in both assemblies, these files will be identical. Providing these files lifts genes over chromosome by chromosome and is generally much faster then mapping all genes to the entire target assembly. 
