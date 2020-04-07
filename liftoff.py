@@ -1,8 +1,5 @@
-<<<<<<< HEAD
 #!/usr/bin/env python3
-=======
 
->>>>>>> d5e2965468bb302f52c570bda0ab3d92e52c0da1
 import map_main_annotation as map_main
 from write_new_gff import write_new_gff
 import argparse
