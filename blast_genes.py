@@ -6,12 +6,10 @@ import math
 import copy
 
 
-def blast_genes_for_chrm(old_chroms, new_chroms, blast_threads, leftover_threads, word_size, search_type, index):
-    genes_file = old_chroms[index].split()[0] + "_genes.fa"
-    blastdb = new_chroms[index] + "_db"
-    if index < leftover_threads:
-        blast_threads += 1
-    outfile = old_chroms[index].split()[0] + "_to_" + new_chroms[index].split()[0] + ".xml"
+def blast_genes_for_chrm(old_chroms, new_chroms, blast_threads, leftover_threads, word_size, search_type, blast_pairs, key):
+    genes_file = key
+    blastdb = blast_pairs[key] + "_blastdb"
+    outfile = key.split()[0] + "_to_" + blast_pairs[key].split()[0] + ".xml"
     if search_type == "chrm_by_chrm":
         blastn_cline = bio.NcbiblastnCommandline(query=genes_file, db=blastdb, outfmt=5, soft_masking=False, dust='no',
 
@@ -87,14 +85,14 @@ def rename_records(all_records):
     return renamed_records
 
 
-def blast_all_genes(old_chroms, new_chroms, threads, word_size, search_type):
+def blast_all_genes(old_chroms, new_chroms, threads, word_size, search_type, blast_pairs):
     pool = Pool(processes=threads)
-    blast_threads = max(1, math.floor(threads / len(old_chroms)))
-    leftover_threads = threads % len(old_chroms)
+    blast_threads = max(1, math.floor(threads / len(blast_pairs)))
+    leftover_threads = threads % len(blast_pairs)
     all_records = {}
     all_files = []
-    func = partial(blast_genes_for_chrm, old_chroms, new_chroms, blast_threads, leftover_threads, word_size, search_type)
-    for result in pool.imap_unordered(func, range(0, len(old_chroms))):
+    func = partial(blast_genes_for_chrm, old_chroms, new_chroms, blast_threads, leftover_threads, word_size, search_type, blast_pairs)
+    for result in pool.imap_unordered(func, list(blast_pairs.keys())):
         all_files.append(result)
     func = partial(parse_blast)
     for result in pool.imap_unordered(func, all_files):

@@ -6,6 +6,7 @@ import argparse
 import map_missing
 import map_unplaced
 import map_copies
+import cleanup_intermediate_files as cif
 
 
 def parse_args():
@@ -49,22 +50,24 @@ def main():
 
     #lift genes
     final_feature_list, unmapped_genes, gene_db =map_main.map_main_annotation(gff, target_fasta, reference_fasta, old_chrms, new_chrms, processes, word_size)
-    if len(unmapped_genes) > 0:
-        features_with_missing, unmapped_genes = map_missing.map_unmapped_genes_agaisnt_all(unmapped_genes, target_fasta, reference_fasta, processes, word_size, final_feature_list, gene_db,  gff + "_db")
+    if len(unmapped_genes) > 0 and new_chrms != ['all']:
+        features_with_missing, unmapped_genes = map_missing.map_unmapped_genes_agaisnt_all(unmapped_genes, target_fasta, reference_fasta, processes, word_size, final_feature_list, gene_db,  gff + "_db", new_chrms)
     else:
         features_with_missing = final_feature_list
     if args.unplaced is not None:
         old_chroms = parse_chrm_files(args.unplaced, new_chroms_file)[0]
-        features_with_unplaced, unmapped_genes = map_unplaced.map_unplaced_seqs(target_fasta, reference_fasta, processes, word_size, features_with_missing, gene_db, old_chroms, gff + "_db")
+        features_with_unplaced, unmapped_genes = map_unplaced.map_unplaced_seqs(target_fasta, reference_fasta, processes, word_size, features_with_missing, gene_db, old_chroms, gff + "_db", new_chrms)
     else:
         features_with_unplaced = features_with_missing
 
     if args.copy_num is not False:
         old_chroms = ['all']
-        features_with_copy_nums, unmapped_genes = map_copies.find_extra_copies(target_fasta, reference_fasta, processes, word_size, features_with_unplaced, gene_db, old_chroms, gff + "_db")
+        features_with_copy_nums, unmapped_genes = map_copies.find_extra_copies(target_fasta, reference_fasta, processes, word_size, features_with_unplaced, gene_db, old_chroms, gff + "_db", new_chrms)
     else:
         features_with_copy_nums = features_with_unplaced
     write_new_gff(features_with_copy_nums, output, gene_db)
+    cif.cleanup_intermediate_files()
+
 
 main()
 

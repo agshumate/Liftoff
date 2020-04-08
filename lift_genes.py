@@ -30,8 +30,8 @@ def get_feature_order(gene_db):
 def extact_and_align_genes(target_fasta, reference_fasta, old_chrms, new_chrms, processes, word_size, gene_db, search_type, build_db):
     if build_db:
         build_all_databases(target_fasta, processes)
-    get_all_gene_seqs(gene_db, reference_fasta, old_chrms)
-    all_records = blast_all_genes(old_chrms, new_chrms, processes, word_size, search_type)
+    blast_pairs = get_all_gene_seqs(gene_db, reference_fasta, old_chrms, new_chrms, processes)
+    all_records = blast_all_genes(old_chrms, new_chrms, processes, word_size, search_type, blast_pairs)
     return all_records
 
 

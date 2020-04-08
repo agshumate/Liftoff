@@ -4,8 +4,8 @@ from Bio import SeqIO
 
 
 def build_database(file, name):
-    make_blast_db_cline = bio.NcbimakeblastdbCommandline(dbtype="nucl", title=name + "_db",
-                                                     out=name + "_db",
+    make_blast_db_cline = bio.NcbimakeblastdbCommandline(dbtype="nucl", title=name + "_blastdb",
+                                                     out=name + "_blastdb",
                                                      input_file=file)
     make_blast_db_cline()
     return name + "_db"
