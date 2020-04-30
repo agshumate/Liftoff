@@ -6,6 +6,6 @@ setuptools.setup(
 	author_email="ashumat2@jhmi.edu",
 	description="A genome annotation liftover tool",
 	url="https://github.com/ashumate/Liftoff",
-	install_requires=['numpy', 'biopython','gffutils', 'networkx'],
+	install_requires=['numpy','gffutils', 'networkx', 'pyfaidx', 'pysam'],
 	python_requires='>=3.6'
 )

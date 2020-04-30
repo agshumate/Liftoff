@@ -1,32 +1,25 @@
-#!/usr/bin/env python3
-
-import map_main_annotation as map_main
-from write_new_gff import write_new_gff
+import liftover_types
+import write_new_gff
 import argparse
-import map_missing
-import map_unplaced
-import map_copies
-import cleanup_intermediate_files as cif
+
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Lift genes')
-    parser.add_argument('-g', required=True, metavar="gff_or_gtf", help="annotation file to lift over in gff or gtf format" )
-    parser.add_argument('-t', required=True, metavar = "target_fasta", help="target fasta genome to lift genes to")
-    parser.add_argument('-r', required=True, metavar= "reference_fasta", help = "reference fasta genome to lift genes from")
-    parser.add_argument('-target_chroms', required=False, metavar = "target_chroms", help="file with name of chromosomes to be lifted to")
-    parser.add_argument('-ref_chroms', required=False, metavar = "reference_chroms", help="file with name of chrosomosomes to be lifted from")
-    parser.add_argument('-p', required=False, metavar ="num_processess", help= "processes", default=1)
-    parser.add_argument('-o', required=False, metavar= "out_file", help="output file", default = 'stdout')
-    parser.add_argument('-w', required=False, metavar = "blast_word_size", help="word size for blast step", default =50)
-    parser.add_argument('-unplaced', required=False, metavar="unplaced_sequence", help="file with unplaced sequence names to map onto main assembly")
-    parser.add_argument('-copy_num',  action='store_true', required=False, help="look for additional copies of genes in the annotation")
+    parser = argparse.ArgumentParser(description='Lift features from one genome assembly to another')
+    group = parser.add_mutually_exclusive_group(required=True)
+    parser.add_argument('-t', required=True, metavar = "target fasta", help="target fasta genome to lift genes to")
+    parser.add_argument('-r', required=True, metavar= "reference fasta", help = "reference fasta genome to lift genes from")
+    group.add_argument('-g', metavar="gff or gtf", help="annotation file to lift over in gff or gtf format")
+    parser.add_argument('-chroms', required=False, metavar="chromosome names",
+                        help="comma seperated file with corresponding chromosomes in the reference,target sequences")
+    parser.add_argument('-p', required=False, metavar ="num processess", help= "processes", default=1)
+    parser.add_argument('-o', required=False, metavar= "outfile", help="output file", default = 'stdout')
+    group.add_argument('-db', metavar="feature database",
+                       help="name of feature database. If none, -g argument must be provided and a database will be built automatically")
+    parser.add_argument('-infer_transcripts', action='store_true', required=False,
+                        help="use if GTF file only includes exon/CDS features")
     args = parser.parse_args()
     return args
-
-def parse_chrm_files(original_chrms_file, new_chrms_file):
-    return [line.rstrip() for line in open(original_chrms_file, 'r').readlines()], [line.rstrip() for line in open(new_chrms_file, 'r').readlines()]
-
 
 
 def main():
@@ -37,40 +30,48 @@ def main():
     reference_fasta = args.r
     processes =int(args.p)
     output = args.o
-    word_size = int(args.w)
-    old_chroms_file = args.ref_chroms
-    new_chroms_file = args.target_chroms
+    chroms_file = args.chroms
+    db = args.db
+    infer_transcripts = args.infer_transcripts
 
     #read chroms
-    if old_chroms_file is not None and new_chroms_file is not None:
-        old_chrms, new_chrms = parse_chrm_files(old_chroms_file, new_chroms_file)
+    if chroms_file is not None:
+        ref_chroms, target_chroms = parse_chrm_files(chroms_file)
     else:
-        old_chrms=['all']
-        new_chrms=['all']
+        ref_chroms=[reference_fasta]
+        target_chroms= [target_fasta]
 
     #lift genes
-    final_feature_list, unmapped_genes, gene_db =map_main.map_main_annotation(gff, target_fasta, reference_fasta, old_chrms, new_chrms, processes, word_size)
-    if len(unmapped_genes) > 0 and new_chrms != ['all']:
-        features_with_missing, unmapped_genes = map_missing.map_unmapped_genes_agaisnt_all(unmapped_genes, target_fasta, reference_fasta, processes, word_size, final_feature_list, gene_db,  gff + "_db", new_chrms)
-    else:
-        features_with_missing = final_feature_list
-    if args.unplaced is not None:
-        old_chroms = parse_chrm_files(args.unplaced, new_chroms_file)[0]
-        features_with_unplaced, unmapped_genes = map_unplaced.map_unplaced_seqs(target_fasta, reference_fasta, processes, word_size, features_with_missing, gene_db, old_chroms, gff + "_db", new_chrms)
-    else:
-        features_with_unplaced = features_with_missing
+    lifted_feature_list = {}
+    unmapped_features = []
 
-    if args.copy_num is not False:
-        old_chroms = ['all']
-        features_with_copy_nums, unmapped_genes = map_copies.find_extra_copies(target_fasta, reference_fasta, processes, word_size, features_with_unplaced, gene_db, old_chroms, gff + "_db", new_chrms)
-    else:
-        features_with_copy_nums = features_with_unplaced
-    write_new_gff(features_with_copy_nums, output, gene_db)
-    cif.cleanup_intermediate_files()
+
+    feature_db, parent_features, intermediate_features, children_features, parent_order = liftover_types.lift_original_annotation(
+    gff, target_fasta, reference_fasta, ref_chroms, target_chroms, processes, db, lifted_feature_list,
+    unmapped_features, infer_transcripts)
+    if len(unmapped_features) > 0 and target_chroms[0] != target_fasta:
+       ref_chroms = [reference_fasta]
+       target_chroms = [target_fasta]
+       unmapped_features = liftover_types.map_unmapped_genes_agaisnt_all(unmapped_features, target_fasta,
+                                                                         reference_fasta, ref_chroms, target_chroms,
+                                                                         processes, lifted_feature_list, feature_db,
+                                                                         parent_features, intermediate_features,
+                                                                         children_features, parent_order)
+       unmapped_out = open("unmapped_features", 'w')
+       for gene in unmapped_features:
+           unmapped_out.write(gene.id + "\n")
+       unmapped_out.close()
+    write_new_gff.write_new_gff(lifted_feature_list, output,  parent_features)
+
+
+def parse_chrm_files(chroms_file):
+    chroms = open(chroms_file, 'r')
+    ref_chroms, target_chroms = [], []
+    for line in chroms.readlines():
+        ref_and_target_chrom= line.rstrip().split(",")
+        ref_chroms.append(ref_and_target_chrom[0])
+        target_chroms.append(ref_and_target_chrom[1])
+    return ref_chroms, target_chroms
 
 
 main()
-
-
-
-
