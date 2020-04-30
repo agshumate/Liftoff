@@ -49,6 +49,7 @@ def main():
     feature_db, parent_features, intermediate_features, children_features, parent_order = liftover_types.lift_original_annotation(
     gff, target_fasta, reference_fasta, ref_chroms, target_chroms, processes, db, lifted_feature_list,
     unmapped_features, infer_transcripts)
+    unmapped_out = open("unmapped_features", 'w')
     if len(unmapped_features) > 0 and target_chroms[0] != target_fasta:
        ref_chroms = [reference_fasta]
        target_chroms = [target_fasta]
@@ -57,10 +58,10 @@ def main():
                                                                          processes, lifted_feature_list, feature_db,
                                                                          parent_features, intermediate_features,
                                                                          children_features, parent_order)
-       unmapped_out = open("unmapped_features", 'w')
-       for gene in unmapped_features:
-           unmapped_out.write(gene.id + "\n")
-       unmapped_out.close()
+
+    for gene in unmapped_features:
+        unmapped_out.write(gene.id + "\n")
+    unmapped_out.close()
     write_new_gff.write_new_gff(lifted_feature_list, output,  parent_features)
 
 

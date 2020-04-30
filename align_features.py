@@ -53,9 +53,10 @@ def align_subset(ref_chroms, target_chroms, threads, target_fasta_name, index):
         target_file = target_chroms[index] + ".fa"
     out_arg = "-o"+ features_file + "_to_" + target_file
     threads_arg = "-t" + str(threads)
-    subprocess.run(['minimap2', out_arg, target_file, features_file, '-a', '--eqx', '-N50', threads_arg],
+    subprocess.run(['minimap2', out_arg, target_file, features_file, '-a', '--eqx', '-N50', '-p 0.5', threads_arg],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    os.remove(target_file)
+    if target_file != target_fasta_name:
+        os.remove(target_file)
     os.remove(features_file)
     return features_file + "_to_" + target_file
 
