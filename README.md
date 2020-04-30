@@ -1,16 +1,16 @@
 # Liftoff
 ## Overview
-Liftoff is tool to lift over gff3/gtf annotations from one chromosome-level genome assembly to another of the same species. Most lift over tools lift each interval in a gff file over seperately which often results in gene mappings that do not make sense biologically. Liftoff instead is designed to accurately map full gene sequences onto new assemblies. It can map genes onto chromsomal regions that have been rearranged in the new assemblies, as well as resolve the correct mappings of homologous genes. 
+Liftoff is tool to lift over gff3/gtf annotations from one genome assembly to another of the same species or closely related species. Most lift over tools lift each interval in a gff file over seperately which often results in gene mappings that do not make sense biologically. Liftoff instead is designed to accurately map full gene sequences onto new assemblies. It can map genes onto chromsomal regions that have been rearranged in the new assemblies, as well as resolve the correct mappings of homologous genes. 
 
 ### Getting Started
 
 #### Step 1:
-Liftoff requires commandline BLAST which can ben installed [here](https://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download). It can also be installed with conda with the following command
+Liftoff requires Minimap2 which can be installed by following instructions [here](https://github.com/lh3/minimap2/releases/tag/v2.17). It can also be installed with conda with the following command
 
 ```
-conda install -c bioconda blast
+conda install -c bioconda minimap2
 ```
-
+Make sure minimap2 is in your path after installation 
 
 
 #### Step 2: 
@@ -28,32 +28,52 @@ python setup.py install
 
 ### USAGE
 ```
-usage: liftoff.py [-h] -g <annotations.gff> -t <target_fasta.fa> -r
-                  <reference_fasta.fa> [-target_chroms <target_chroms.txt>]
-                  [-ref_chroms <reference_chroms.txt>] [-p num_processess]
-                  [-o <target.gff>] [-w blast_word_size]
-                  [-unplaced <unplaced_seqids.txt>] [-copy_num]
+usage: liftoff.py [-h] -t target fasta -r reference fasta [-g gff or gtf]
+                  [-chroms chromosome names] [-p num processess] [-o outfile]
+                  [-db feature database] [-infer_transcripts]
 
-Lift genes
+Lift features from one genome assembly to another
 
 optional arguments:
   -h, --help            show this help message and exit
-  -g <annotations.gff>  annotation file to lift over in gff or gtf format
-  -t <target_fasta.fa>  target fasta genome to lift genes to
-  -r <reference_fasta.fa>
-                        reference fasta genome to lift genes from
-  -target_chroms <target_chroms.txt>
-                        file with name of chromosomes to be lifted to
-  -ref_chroms <reference_chroms.txt>
-                        file with name of chromosomes to be lifted from
-  -p num_processess     processes
-  -o <target.gff>       output file
-  -w blast_word_size    word size for blast step
-  -unplaced <unplaced_seqids.txt>
-                        file with unplaced sequence names.Genes annotated on
-                        these sequences will be mapped onto the main assembly
-  -copy_num             look for additional copies of genes after the
-                        annotation has been lifted over
+  -t target fasta       target fasta genome to lift genes to
+  -r reference fasta    reference fasta genome to lift genes from
+  -g gff or gtf         annotation file to lift over in gff or gtf format
+  -chroms chromosome names
+                        comma seperated file with corresponding chromosomes in
+                        the reference,target sequences
+  -p num processess     processes
+  -o outfile            output file
+  -db feature database  name of feature database. If none, -g argument must be
+                        provided and a database will be built automatically
+  -infer_transcripts    use if GTF file only includes exon/CDS features
  
 ```
-The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation(gff or gtf format). For chromosome-scale assemblies, a file with a list of chromosomes in the reference genome can be provided in the file reference_chroms.txt file. The corresponding chromosomes in the target assembly should be provided in the file target_chroms.txt. If the chromosomes have the same names in both assemblies, these files will be identical. Providing these files lifts genes over chromosome by chromosome and is generally much faster then mapping all genes to the entire target assembly. 
+The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation or feature database. If an annotation file is provided with the -g argument, a feature database will be built automatically and can be used for future lift overs by providing the -db argument. For chromosome-scale assemblies of the same species, performing the lift over chromosome by chromosome is much faster. This option can be enabled by providing a  comma seperated file chroms.txt with corresponding chromosome names with the -chroms argument. Each line of the file should follow {ref_chrom_name},{target_chrom_name} for each pair of corresponding chromosomes. For example, a lift over from a Genbank human assembly to a Refseq human assembly would have the following chroms.txt file. 
+ ```
+chr1,NC_000001.10
+chr2,NC_000002.11
+chr3,NC_000003.11
+chr4,NC_000004.11
+chr5,NC_000005.9
+chr6,NC_000006.11
+chr7,NC_000007.13
+chr8,NC_000008.10
+chr9,NC_000009.11
+chr10,NC_000010.10
+chr11,NC_000011.9
+chr12,NC_000012.11
+chr13,NC_000013.10
+chr14,NC_000014.8
+chr15,NC_000015.9
+chr16,NC_000016.9
+chr17,NC_000017.10
+chr18,NC_000018.9
+chr19,NC_000019.9
+chr20,NC_000020.10
+chr21,NC_000021.8
+chr22,NC_000022.10
+chrX,NC_000023.10
+chrY,NC_000024.9
+```
+After the chromosome by chromosome lift over is complete, any genes that did not map will be aligned agaisnt the whole genome. 
