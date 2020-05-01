@@ -111,7 +111,7 @@ def convert_all_children_coords(shortest_path_nodes, children, parent):
     for child in children:
         lifted_start = convert_coord(child.start, parent, shortest_path_nodes)
         lifted_end = convert_coord(child.end, parent, shortest_path_nodes)
-        if lifted_start != lifted_end or child.start == child.end:
+        if (lifted_start != lifted_end or child.start == child.end) and lifted_start !=0:
             strand = get_strand(shortest_path_nodes[1], parent)
             mapped_children[child.id] = gffutils.Feature(id=child.id, seqid=shortest_path_nodes[1].reference_name,
                                                          start=min(lifted_start, lifted_end) + 1,
