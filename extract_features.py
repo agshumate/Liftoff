@@ -43,6 +43,8 @@ def seperate_parents_and_children(feature_db):
                     child_dict[parent.id].append(child)
                     if "Parent" not in child.attributes:
                         add_parent_tag(child, feature_db)
+            if len(child_dict[parent.id]) == 0:
+                child_dict[parent.id].append(parent)
     for intermediate_type in intermediate_types:
         for intermediate_feature in feature_db.features_of_type(featuretype=intermediate_type):
             intermediate_dict[intermediate_feature.id] = intermediate_feature

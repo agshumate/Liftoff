@@ -55,9 +55,9 @@ def align_subset(ref_chroms, target_chroms, threads, target_fasta_name, index):
     threads_arg = "-t" + str(threads)
     subprocess.run(['minimap2', out_arg, target_file, features_file, '-a', '--eqx', '-N50', '-p 0.5', threads_arg],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    if target_file != target_fasta_name:
-        os.remove(target_file)
-    os.remove(features_file)
+    #if target_file != target_fasta_name:
+        #os.remove(target_file)
+    #os.remove(features_file)
     return features_file + "_to_" + target_file
 
 
@@ -77,7 +77,7 @@ def parse_alignment(file, parent_dict, children_dict, unmapped_features):
                     all_aligned_blocks[ref_seq.query_name]=aligned_blocks
         else:
             unmapped_features.append(parent_dict[ref_seq.query_name])
-    os.remove(file)
+    #os.remove(file)
     return all_aligned_blocks
 
 

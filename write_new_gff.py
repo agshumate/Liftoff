@@ -35,7 +35,7 @@ def write_new_gff(lifted_features, out_file,  parent_dict ):
         copy_num=copy_num_dict[parent.id]
         parent.attributes["copy_number"]=str(copy_num)
 
-        if parent.attributes["coverage"][0] < 0.5:
+        if float(parent.attributes["coverage"][0]) < 0.5:
             parent.attributes["partial_mapping"] = "True"
         write_feature([parent], f, child_features, parent_child_dict)
 

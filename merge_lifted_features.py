@@ -29,6 +29,11 @@ def merge_lifted_features(mapped_children, shortest_path_weight, gene, unmapped_
         orphans, top_feature=create_parents(orphans, parent_dict, feature_list, intermediate_dict, gene)
     feature_list.sort(key=lambda x: (x.seqid, x.start))
     feature_list.sort(key=lambda x:feature_order[x.featuretype])
+    for i in range(1,len(feature_list)):
+        if feature_list[i].start == feature_list[i-1].end and feature_list[i].featuretype == feature_list[i-1].featuretype:
+            feature_list[i].start += 1
+            if feature_list[i].start > feature_list[i].end:
+                feature_list.remove(feature_list[i])
     if meets_length_threshold(top_feature, threshold, gene) is False:
         feature_list = []
         unmapped_genes.append(gene)
