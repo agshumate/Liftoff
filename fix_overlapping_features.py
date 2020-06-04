@@ -53,20 +53,31 @@ def compare_nearby_features(nearby_features, parent_list, feature, remap_feature
                 lifted_overlap = liftoff_utils.count_overlap(feature.start, feature.end, nearby_feature.start,
                                                              nearby_feature.end)
                 if lifted_overlap >0 and original_overlap <= 0:
-                    feature_to_remap, feature_to_keep = find_feature_to_remap(feature, nearby_feature,
+                    if feature.attributes["copy_id"][0] in remap_features:
+                        feature_to_remap, feature_to_keep = feature, nearby_feature
+                    elif nearby_feature.attributes["copy_id"][0] in remap_features:
+                        feature_to_remap, feature_to_keep = nearby_feature, feature
+
+                    else:
+                        feature_to_remap, feature_to_keep = find_feature_to_remap(feature, nearby_feature,
                                                                               original_parent_order, new_parent_order)
-                    remap_features[feature_to_remap.attributes["copy_id"][0]] = [feature_to_keep.start - 1,
-                                                                                 feature_to_keep.end - 1,
-                                                                                 feature_to_remap.seqid,
-                                                                                 feature_to_remap.strand]
+
+
+                    remap_features[feature_to_remap.attributes["copy_id"][0]]=[feature_to_keep.start - 1,
+                                                                                      feature_to_keep.end - 1,
+                                                                                      feature_to_keep.seqid,
+                                                                                      feature_to_keep.strand]
     return remap_features
 
 
-def find_neighbors(parent_order, feature):
-    feature_location = np.where(parent_order==feature.id)[0][0]
+def find_neighbors(parent_order, feature, feature_exclude):
+    if feature_exclude is not None:
+        filtered_parent_order = parent_order[parent_order != feature_exclude.id]
+    else:
+        filtered_parent_order = parent_order
+    feature_location = np.where(filtered_parent_order==feature.id)[0][0]
     left_neighbor = max(0, feature_location -1)
-    right_neighbor = min(feature_location +2, len(parent_order))
-    feature_neighbors = parent_order[left_neighbor:right_neighbor].tolist()
+    feature_neighbors = filtered_parent_order[left_neighbor].tolist()
     return feature_neighbors
 
 def find_feature_to_remap(feature, overlap_feature, original_parent_order, new_parent_order):
@@ -75,25 +86,25 @@ def find_feature_to_remap(feature, overlap_feature, original_parent_order, new_p
     elif overlap_feature.score < feature.score:
         return feature, overlap_feature
     else:
-        feature_neighbors = find_neighbors(new_parent_order, feature)
-        overlap_feature_neighbors = find_neighbors(new_parent_order, overlap_feature)
-        original_feature_neighbors = find_neighbors(original_parent_order, feature)
-        original_overlap_feature_neighbors = find_neighbors(original_parent_order, overlap_feature)
+        feature_neighbors = find_neighbors(new_parent_order, feature, overlap_feature)
+        overlap_feature_neighbors = find_neighbors(new_parent_order, overlap_feature, feature)
+        original_feature_neighbors = find_neighbors(original_parent_order, feature, None)
+        original_overlap_feature_neighbors = find_neighbors(original_parent_order, overlap_feature, None)
         if feature_neighbors == original_feature_neighbors and overlap_feature_neighbors != original_overlap_feature_neighbors:
             return overlap_feature, feature
         elif feature_neighbors != original_feature_neighbors and overlap_feature_neighbors == original_overlap_feature_neighbors:
             return feature, overlap_feature
+
+        if overlap_feature.end - overlap_feature.start < feature.end - feature.start:
+            return overlap_feature, feature
+        elif overlap_feature.end - overlap_feature.start >  feature.end - feature.start:
+            return feature, overlap_feature
         else:
-            if overlap_feature.end - overlap_feature.start < feature.end - feature.start:
-                return overlap_feature, feature
-            elif overlap_feature.end - overlap_feature.start >  feature.end - feature.start:
+            min_feature = min(feature.attributes["copy_id"][0], overlap_feature.attributes["copy_id"][0])
+            if min_feature == feature.attributes["copy_id"][0]:
                 return feature, overlap_feature
             else:
-                min_feature = min(feature.attributes["copy_id"][0], overlap_feature.attributes["copy_id"][0])
-                if min_feature == feature.attributes["copy_id"][0]:
-                    return feature, overlap_feature
-                else:
-                    return overlap_feature, feature
+                return overlap_feature, feature
 
 
 def resolve_overlapping_homologues(all_aligned_segs, lifted_feature_list, features_to_remap,  unmapped_features,
@@ -110,7 +121,7 @@ def resolve_overlapping_homologues(all_aligned_segs, lifted_feature_list, featur
         lift_features.lift_all_features(aligned_segs_to_remap, all_overlapping_features, threshold, feature_db,
                                         parent_dict, children_dict, intermediate_dict, unmapped_features,
                                         lifted_feature_list)
-        clean_overlapping_features(lifted_feature_list, all_overlapping_features, parent_dict)
+        clean_overlapping_features(lifted_feature_list, all_overlapping_features, parent_dict, features_to_remap, unmapped_features)
         for feature_to_remap in features_to_remap:
             if feature_to_remap in lifted_feature_list:
                 features_to_check[feature_to_remap] = lifted_feature_list[feature_to_remap]
@@ -132,7 +143,7 @@ def add_overlapping_feature(features_to_remap, feature_to_remap, all_overlapping
                                              overlap_seq, overlap_strand)]
 
 
-def clean_overlapping_features(lifted_feature_list, all_overlapping_features, parent_dict):
+def clean_overlapping_features(lifted_feature_list, all_overlapping_features, parent_dict, features_to_remap, unmapped_features):
     parent_list = liftoff_utils.get_parent_list(lifted_feature_list, parent_dict)
     feature_by_chrom_dict = {}
     for feature in parent_list:
@@ -142,8 +153,12 @@ def clean_overlapping_features(lifted_feature_list, all_overlapping_features, pa
             feature_by_chrom_dict[feature.seqid] = [feature]
     for feature_name in all_overlapping_features:
         for overlapping_features in all_overlapping_features[feature_name]:
-            if find_overlapping_features(overlapping_features, feature_by_chrom_dict[overlapping_features[2]]) is False:
+            if overlapping_features[2] not in feature_by_chrom_dict or  find_overlapping_features(overlapping_features, feature_by_chrom_dict[overlapping_features[2]]) is False:
                 all_overlapping_features[feature_name].remove(overlapping_features)
+                for feature in unmapped_features:
+                    if feature.id == feature_name:
+                        unmapped_features.remove(feature)
+                        features_to_remap.append(lifted_feature_list[feature.id])
 
 
 def find_overlapping_features(overlapping_features, feature_list):

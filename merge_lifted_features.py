@@ -11,7 +11,7 @@ def meets_length_threshold(feature, threshold, gene):
 
 
 def merge_lifted_features(mapped_children, shortest_path_weight, gene, unmapped_genes, threshold,
-                          gene_name, feature_order, parent_dict, intermediate_dict):
+                          gene_name, feature_order, parent_dict, intermediate_dict, aln_cov, seq_id):
     feature_list = []
     orphans=[]
     top_feature = None
@@ -29,17 +29,14 @@ def merge_lifted_features(mapped_children, shortest_path_weight, gene, unmapped_
         orphans, top_feature=create_parents(orphans, parent_dict, feature_list, intermediate_dict, gene)
     feature_list.sort(key=lambda x: (x.seqid, x.start))
     feature_list.sort(key=lambda x:feature_order[x.featuretype])
-    for i in range(1,len(feature_list)):
-        if feature_list[i].start == feature_list[i-1].end and feature_list[i].featuretype == feature_list[i-1].featuretype:
-            feature_list[i].start += 1
-            if feature_list[i].start > feature_list[i].end:
-                feature_list.remove(feature_list[i])
-    if meets_length_threshold(top_feature, threshold, gene) is False:
+    if aln_cov < threshold:
         feature_list = []
         unmapped_genes.append(gene)
     else:
         top_feature.score = shortest_path_weight/(gene.end - gene.start)
         top_feature.attributes["copy_id"] = gene_name
+        top_feature.attributes["coverage"] = round(aln_cov,5)
+        top_feature.attributes["sequence_ID"] = str(round(seq_id,5))
     return feature_list, top_feature.start
 
 

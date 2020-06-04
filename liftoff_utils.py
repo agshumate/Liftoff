@@ -1,4 +1,5 @@
 import numpy as np
+
 def count_overlap(start1, end1, start2, end2):
     overlap = min(end1, end2) - max(start1, start2)
     return overlap
@@ -60,3 +61,4 @@ def clear_scores(feature_list, parent_dict):
 def find_parent_order(parents):
     parents.sort(key=lambda x: (x.seqid, x.start))
     return np.array([parent.id for parent in parents])
+

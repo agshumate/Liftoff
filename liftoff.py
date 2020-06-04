@@ -18,6 +18,7 @@ def parse_args():
                        help="name of feature database. If none, -g argument must be provided and a database will be built automatically")
     parser.add_argument('-infer_transcripts', action='store_true', required=False,
                         help="use if GTF file only includes exon/CDS features")
+    parser.add_argument('-u', required=False, metavar ="unmapped features file", help= "name of file to write unmapped features to", default="unmapped_features")
     args = parser.parse_args()
     return args
 
@@ -49,8 +50,9 @@ def main():
     feature_db, parent_features, intermediate_features, children_features, parent_order = liftover_types.lift_original_annotation(
     gff, target_fasta, reference_fasta, ref_chroms, target_chroms, processes, db, lifted_feature_list,
     unmapped_features, infer_transcripts)
-    unmapped_out = open("unmapped_features", 'w')
+    unmapped_out = open(args.u, 'w')
     if len(unmapped_features) > 0 and target_chroms[0] != target_fasta:
+       print("mapping unaligned features to whole genome")
        ref_chroms = [reference_fasta]
        target_chroms = [target_fasta]
        unmapped_features = liftover_types.map_unmapped_genes_agaisnt_all(unmapped_features, target_fasta,
@@ -72,6 +74,7 @@ def parse_chrm_files(chroms_file):
         ref_and_target_chrom= line.rstrip().split(",")
         ref_chroms.append(ref_and_target_chrom[0])
         target_chroms.append(ref_and_target_chrom[1])
+    chroms.close()
     return ref_chroms, target_chroms
 
 

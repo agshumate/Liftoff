@@ -3,10 +3,13 @@ from multiprocessing import Pool
 from pyfaidx import Fasta, Faidx
 from functools import partial
 import liftoff_utils
+import os
 
 
 def extract_features_to_lift(g_arg, db_arg, ref_chroms, reference_fasta, processes, infer_transcripts):
     print("extracting features")
+    if os.path.exists("intermediate_files") is False:
+        os.mkdir("intermediate_files")
     feature_db, feature_db_name = create_feature_db_connections(g_arg, db_arg, infer_transcripts)
     parent_dict, child_dict, intermediate_dict, parent_order= seperate_parents_and_children(feature_db)
     get_gene_sequences(parent_dict, ref_chroms, reference_fasta, processes)
@@ -102,7 +105,7 @@ def get_gene_sequences(parent_dict, ref_chroms, reference_fasta_name, processes)
 
 def get_gene_sequences_subset(parent_dict, reference_fasta_name, chrom_name):
     reference_fasta = Fasta(reference_fasta_name)
-    fasta_out = open(chrom_name + "_genes.fa", 'w')
+    fasta_out = open("intermediate_files/"+chrom_name + "_genes.fa", 'w')
     sorted_parents = sorted(list(parent_dict.values()), key=lambda x: x.seqid)
     if chrom_name == reference_fasta_name:
         current_chrom = sorted_parents[0].seqid

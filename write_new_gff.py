@@ -23,6 +23,7 @@ def write_new_gff(lifted_features, out_file,  parent_dict ):
     else:
         f="stdout"
     parents = liftoff_utils.get_parent_list(lifted_features, parent_dict)
+    parents.sort(key=lambda x: (x.seqid, x.start))
     for parent in parents:
         child_features = lifted_features[parent.attributes["copy_id"][0]]
         parent_child_dict = build_parent_dict(child_features, parent_dict)

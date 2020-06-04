@@ -41,7 +41,7 @@ def sort_alignments(parent_dict, alignments):
     order_dict = {}
     values = list(alignments.values())
     for alignment in alignments:
-        parent_list.append(parent_dict[alignments[alignment][0].original_id])
+       parent_list.append(parent_dict[alignments[alignment][0].original_id])
     parent_list.sort(key=lambda x: (x.seqid, x.start))
     for parent in parent_list:
             order_dict[parent.id] = order
@@ -61,7 +61,7 @@ def lift_features_subset(all_overlapping_features, threshold, feature_order, par
         overlapping_features = []
     parent = parent_dict[original_parent_name]
     if len(aligned_feature) > 0:
-        lifted_children, shortest_path_weight = find_best_mapping.find_best_mapping(aligned_feature,
+        lifted_children, shortest_path_weight, alignment_coverage, seq_id = find_best_mapping.find_best_mapping(aligned_feature,
                                                                                     parent.end - parent.start + 1,
                                                                                     parent, overlapping_features,
                                                                                     children_dict, previous_gene_start)
@@ -69,7 +69,7 @@ def lift_features_subset(all_overlapping_features, threshold, feature_order, par
                                                                                          shortest_path_weight, parent,
                                                                                          unmapped_features, threshold,
                                                                                          new_parent_name, feature_order,
-                                                                                         parent_dict, intermediate_dict)
+                                                                                         parent_dict, intermediate_dict,alignment_coverage, seq_id)
     else:
         unmapped_features.append(parent)
         feature_start = 0

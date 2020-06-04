@@ -3,6 +3,8 @@ import aligned_seg
 import numpy as np
 import gffutils
 import liftoff_utils
+import copy
+
 
 
 
@@ -21,15 +23,27 @@ def find_best_mapping(alignments, query_length,  parent, coords_to_exclude, chil
     shortest_path_nodes = []
     for i in range  (len(shortest_path)):
         node_name = shortest_path[i]
+
         shortest_path_nodes.append(node_dict[node_name])
+    alignment_coverage, seq_id = get_coverage_and_seq_id(shortest_path_nodes[1:-1], query_length)
     mapped_children = convert_all_children_coords(shortest_path_nodes, children, parent)
-    return mapped_children, shortest_path_weight
+    return mapped_children, shortest_path_weight, alignment_coverage, seq_id
+
+def get_coverage_and_seq_id(shortest_path_nodes, query_length):
+    aligned_length = 0
+    matches =0
+    for node in shortest_path_nodes:
+        aligned_length += (node.query_block_end - node.query_block_start+1)
+        matches += ((node.query_block_end - node.query_block_start+1) - len(node.mismatches[(node.mismatches >=node.query_block_start) & (node.mismatches <= node.query_block_end)]))
+    return aligned_length/query_length, matches/query_length
+
+
 
 
 def add_target_node(aln_graph, node_dict, query_length, children_coords, parent):
     num_nodes = max(node_dict.keys())
-    node_dict[num_nodes + 1] = aligned_seg.aligned_seg("end", "end", "end", query_length, query_length, query_length,
-                                                       query_length, 0, [])
+    node_dict[num_nodes + 1] = aligned_seg.aligned_seg("end", "end", "end", query_length-1, query_length-1, query_length-1,
+                                                       query_length-1, 0, [])
     for node_name in node_dict:
         if is_terminal_node(node_name, aln_graph):
             edge_weight = get_edge_weight(node_dict[node_name],node_dict[num_nodes+1], children_coords, parent)
@@ -52,9 +66,10 @@ def chain_alignments(head_nodes, node_dict, aln_graph, coords_to_exclude, parent
 def add_edges(head_node_name, node_dict, aln_graph, coords_to_exclude, parent, children_coords):
     for node_name in node_dict:
         from_node = node_dict[node_name]
-        if is_valid_edge(node_dict[node_name], node_dict[head_node_name], coords_to_exclude, parent):
-            edge_weight = get_edge_weight(from_node, node_dict[head_node_name], children_coords, parent)
-            aln_graph.add_edge(node_name, head_node_name, cost=edge_weight)
+        if is_terminal_node(node_name, aln_graph):
+            if is_valid_edge(node_dict[node_name], node_dict[head_node_name], coords_to_exclude, parent):
+                edge_weight = get_edge_weight(from_node, node_dict[head_node_name], children_coords, parent)
+                aln_graph.add_edge(node_name, head_node_name, cost=edge_weight)
 
 
 
@@ -85,8 +100,8 @@ def add_single_alignments(node_dict, aln_graph, alignments, children_coords, par
     previous_node_id = -1
     head_nodes = []
     previous_node = 0
-    for aln in alignments:
-        aln = trim_overlap_coords(aln, coords_to_exclude, parent)
+    for original_aln in alignments:
+        aln = trim_overlap_coords(copy.deepcopy(original_aln), coords_to_exclude, parent)
         if aln.aln_id != previous_node_id:
             previous_node = 0
             previous_node_id = aln.aln_id
@@ -109,8 +124,7 @@ def convert_all_children_coords(shortest_path_nodes, children, parent):
     shortest_path_nodes.sort(key=lambda x: x.query_block_start)
     mapped_children = {}
     for child in children:
-        lifted_start = convert_coord(child.start, parent, shortest_path_nodes)
-        lifted_end = convert_coord(child.end, parent, shortest_path_nodes)
+        lifted_start, lifted_end = convert_coord(child.start, child.end, parent, shortest_path_nodes)
         if (lifted_start != lifted_end or child.start == child.end) and lifted_start !=0:
             strand = get_strand(shortest_path_nodes[1], parent)
             mapped_children[child.id] = gffutils.Feature(id=child.id, seqid=shortest_path_nodes[1].reference_name,
@@ -132,18 +146,22 @@ def get_strand(aln, parent):
     return strand
 
 
-def convert_coord(coord, parent, shortest_path_nodes):
-    relative_coord = liftoff_utils.get_relative_child_coord(parent, coord, shortest_path_nodes[1].is_reverse)
+def convert_coord(coord_start, coord_end, parent, shortest_path_nodes):
     if len(shortest_path_nodes) == 2:
-        return 0
-    for i in range (1,len(shortest_path_nodes)-1):
-        if relative_coord >= shortest_path_nodes[i].query_block_start:
-            if relative_coord <= shortest_path_nodes[i].query_block_end:
-                return shortest_path_nodes[i].reference_block_start + (
-                            relative_coord - shortest_path_nodes[i].query_block_start)
-            elif relative_coord < shortest_path_nodes[i+1].query_block_start:
-                return shortest_path_nodes[i].reference_block_end
-    return shortest_path_nodes[1].reference_block_start
+        return 0,0
+    converted_coords = np.zeros((coord_end - coord_start +1,1))
+    for i in range(coord_start, coord_end +1):
+        relative_coord = liftoff_utils.get_relative_child_coord(parent, i, shortest_path_nodes[1].is_reverse)
+        for j in range (1,len(shortest_path_nodes)-1):
+            if relative_coord >= shortest_path_nodes[j].query_block_start:
+                if relative_coord <= shortest_path_nodes[j].query_block_end:
+                    converted_coords[i-coord_start]=shortest_path_nodes[j].reference_block_start + (
+                                relative_coord - shortest_path_nodes[j].query_block_start)
+    aligned_coords = converted_coords[converted_coords !=0]
+    if len(aligned_coords) == 0:
+        return 0,0
+    return min(aligned_coords), max(aligned_coords)
+
 
 
 def intialize_graph():
@@ -189,7 +207,7 @@ def get_edge_weight(from_node, to_node, children_coords, parent):
             unaligned_exon_bases += to_node.reference_block_start - from_node.reference_block_end +1
         else:
             unaligned_exon_bases += max(0,overlap)
-    return unaligned_exon_bases +1
+    return unaligned_exon_bases
 
 
 
