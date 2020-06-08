@@ -207,8 +207,8 @@ def get_node_weight(aln, children_coords, parent):
 
 
 def get_weight(u, v, d, G):
-    node_u_wt = G.nodes[u].get('weight', 1)
-    node_v_wt = G.nodes[v].get('weight', 1)
+    node_u_wt = G.nodes[u].get('weight', 0)
+    node_v_wt = G.nodes[v].get('weight', 0)
     edge_wt = d.get('cost', 1)
     return node_u_wt/2 + node_v_wt/2 + edge_wt
 
