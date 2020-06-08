@@ -21,21 +21,16 @@ def find_best_mapping(alignments, query_length,  parent, coords_to_exclude, chil
     shortest_path_weight = nx.shortest_path_length(aln_graph, source=0, target=len(node_dict) - 1,
                                                    weight=lambda u, v, d: get_weight(u, v, d, aln_graph))
     shortest_path_nodes = []
-    for i in range  (len(shortest_path)):
+    for i in range  (1,len(shortest_path)-1):
         node_name = shortest_path[i]
-
         shortest_path_nodes.append(node_dict[node_name])
-    alignment_coverage, seq_id = get_coverage_and_seq_id(shortest_path_nodes[1:-1], query_length)
-    mapped_children = convert_all_children_coords(shortest_path_nodes, children, parent)
+    if len(shortest_path_nodes) == 0:
+        return {}, shortest_path_weight, 0,0
+    mapped_children, alignment_coverage, seq_id = convert_all_children_coords(shortest_path_nodes, children, parent)
     return mapped_children, shortest_path_weight, alignment_coverage, seq_id
 
-def get_coverage_and_seq_id(shortest_path_nodes, query_length):
-    aligned_length = 0
-    matches =0
-    for node in shortest_path_nodes:
-        aligned_length += (node.query_block_end - node.query_block_start+1)
-        matches += ((node.query_block_end - node.query_block_start+1) - len(node.mismatches[(node.mismatches >=node.query_block_start) & (node.mismatches <= node.query_block_end)]))
-    return aligned_length/query_length, matches/query_length
+
+
 
 
 
@@ -58,6 +53,9 @@ def is_terminal_node(node, aln_graph):
     return True
 
 
+
+
+
 def chain_alignments(head_nodes, node_dict, aln_graph, coords_to_exclude, parent, children_coords):
     for node_name in head_nodes:
         add_edges(node_name, node_dict, aln_graph, coords_to_exclude, parent, children_coords)
@@ -66,10 +64,10 @@ def chain_alignments(head_nodes, node_dict, aln_graph, coords_to_exclude, parent
 def add_edges(head_node_name, node_dict, aln_graph, coords_to_exclude, parent, children_coords):
     for node_name in node_dict:
         from_node = node_dict[node_name]
-        if is_terminal_node(node_name, aln_graph):
-            if is_valid_edge(node_dict[node_name], node_dict[head_node_name], coords_to_exclude, parent):
-                edge_weight = get_edge_weight(from_node, node_dict[head_node_name], children_coords, parent)
-                aln_graph.add_edge(node_name, head_node_name, cost=edge_weight)
+        #if is_terminal_node(node_name, aln_graph):
+        if is_valid_edge(node_dict[node_name], node_dict[head_node_name], coords_to_exclude, parent):
+            edge_weight = get_edge_weight(from_node, node_dict[head_node_name], children_coords, parent)
+            aln_graph.add_edge(node_name, head_node_name, cost=edge_weight)
 
 
 
@@ -123,16 +121,45 @@ def add_single_alignments(node_dict, aln_graph, alignments, children_coords, par
 def convert_all_children_coords(shortest_path_nodes, children, parent):
     shortest_path_nodes.sort(key=lambda x: x.query_block_start)
     mapped_children = {}
+    aligned_bases, total_bases, mismatches= set([]), set([]), set([])
     for child in children:
-        lifted_start, lifted_end = convert_coord(child.start, child.end, parent, shortest_path_nodes)
-        if (lifted_start != lifted_end or child.start == child.end) and lifted_start !=0:
-            strand = get_strand(shortest_path_nodes[1], parent)
-            mapped_children[child.id] = gffutils.Feature(id=child.id, seqid=shortest_path_nodes[1].reference_name,
+        child_start, child_end = child.start, child.end
+        lifted_feature = False
+        total_bases.update(range(child_start, child_end + 1))
+        while lifted_feature is False:
+            lifted_start, lifted_end = convert_coord(child_start, child_end, parent, shortest_path_nodes)
+            if lifted_start !=0 and lifted_end !=0:
+                lifted_feature = True
+            else:
+                if lifted_start == 0:
+                    child_start += 1
+                if lifted_end == 0:
+                    child_end -= 1
+            if (child_start >= child_end and lifted_start ==0 and lifted_end ==0) :
+                lifted_feature = True
+        aligned_bases.update(range(child_start,child_end+1))
+        mismatched_bases = find_mismatched_bases(child_start, child_end, shortest_path_nodes, parent)
+        mismatches.update(mismatched_bases)
+        if  lifted_start !=0:
+            strand = get_strand(shortest_path_nodes[0], parent)
+            mapped_children[child.id] = gffutils.Feature(id=child.id, seqid=shortest_path_nodes[0].reference_name,
                                                          start=min(lifted_start, lifted_end) + 1,
                                                          end=max(lifted_start, lifted_end) + 1,
                                                          featuretype=child.featuretype, source="Liftoff",
                                                          attributes=child.attributes, strand=strand)
-    return mapped_children
+    return mapped_children, len(aligned_bases)/len(total_bases), (len(aligned_bases)-len(mismatches))/len(total_bases)
+
+def find_mismatched_bases(start,end, shortest_path_nodes, parent):
+    all_mismatches = []
+    relative_start=liftoff_utils.get_relative_child_coord(parent, start, shortest_path_nodes[0].is_reverse)
+    relative_end=liftoff_utils.get_relative_child_coord(parent, end, shortest_path_nodes[0].is_reverse)
+    for node in shortest_path_nodes:
+        node_mismatches = np.array(node.mismatches)
+        mismatches = node_mismatches[np.where((node_mismatches >= relative_start) & (node_mismatches <= relative_end ))[0]]
+        if len(mismatches) > 0:
+            all_mismatches.extend(mismatches.tolist())
+    return all_mismatches
+
 
 
 def get_strand(aln, parent):
@@ -147,21 +174,17 @@ def get_strand(aln, parent):
 
 
 def convert_coord(coord_start, coord_end, parent, shortest_path_nodes):
-    if len(shortest_path_nodes) == 2:
-        return 0,0
-    converted_coords = np.zeros((coord_end - coord_start +1,1))
-    for i in range(coord_start, coord_end +1):
-        relative_coord = liftoff_utils.get_relative_child_coord(parent, i, shortest_path_nodes[1].is_reverse)
-        for j in range (1,len(shortest_path_nodes)-1):
+    lifted_coords = []
+    for i in [coord_start, coord_end]:
+        lifted_coord = 0
+        relative_coord = liftoff_utils.get_relative_child_coord(parent, i, shortest_path_nodes[0].is_reverse)
+        for j in range (0,len(shortest_path_nodes)):
             if relative_coord >= shortest_path_nodes[j].query_block_start:
                 if relative_coord <= shortest_path_nodes[j].query_block_end:
-                    converted_coords[i-coord_start]=shortest_path_nodes[j].reference_block_start + (
-                                relative_coord - shortest_path_nodes[j].query_block_start)
-    aligned_coords = converted_coords[converted_coords !=0]
-    if len(aligned_coords) == 0:
-        return 0,0
-    return min(aligned_coords), max(aligned_coords)
-
+                    lifted_coord=(shortest_path_nodes[j].reference_block_start + (
+                                relative_coord - shortest_path_nodes[j].query_block_start))
+        lifted_coords.append(lifted_coord)
+    return lifted_coords[0], lifted_coords[1]
 
 
 def intialize_graph():

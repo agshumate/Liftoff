@@ -112,6 +112,7 @@ def resolve_overlapping_homologues(all_aligned_segs, lifted_feature_list, featur
                                    feature_db,original_parent_order):
     all_overlapping_features = {}
     while len(features_to_remap) > 0:
+        print(len(features_to_remap))
         features_to_check = {}
         aligned_segs_to_remap = {}
         for feature_to_remap in features_to_remap:

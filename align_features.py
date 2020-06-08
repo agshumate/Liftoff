@@ -46,16 +46,16 @@ def split_target_sequence(target_chroms, target_fasta_name):
 
 
 def align_subset(ref_chroms, target_chroms, threads, target_fasta_name, index):
-    features_file = ref_chroms[index] + "_genes.fa"
+    features_file =  "intermediate_files/" + ref_chroms[index] + "_genes.fa"
     if target_chroms[index] == target_fasta_name:
         target_file = target_fasta_name
     else:
-        target_file =  target_chroms[index] + ".fa"
-    out_arg = "-o" + "intermediate_files/" + features_file + "_to_" + target_file + ".sam"
+        target_file =  "intermediate_files/" +target_chroms[index] + ".fa"
+    out_arg = "-o" + "intermediate_files/"+ ref_chroms[index] + "_to_" + target_chroms[index] + ".sam"
     threads_arg = "-t" + str(threads)
     subprocess.run(['minimap2', out_arg, target_file, features_file, '-a', '--eqx', '-N50', '-p 0.5', threads_arg],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    return "intermediate_files/"+features_file + "_to_" + target_file + ".sam"
+    return "intermediate_files/"+ ref_chroms[index] + "_to_" + target_chroms[index] + ".sam"
 
 
 def parse_alignment(file, parent_dict, children_dict, unmapped_features):
@@ -137,7 +137,8 @@ def add_block(query_block_pos, reference_block_pos, aln_id, alignment, query_blo
     new_block = aligned_seg.aligned_seg(aln_id, alignment.query_name, alignment.reference_name, query_block_start, query_block_end,
                                         reference_block_start, reference_block_end, alignment.is_reverse,
                                         np.array(mismatches).astype(int))
-    new_blocks.append(new_block)
+    if contains_child(new_block, merged_children_coords, parent):
+        new_blocks.append(new_block)
 
 
 
