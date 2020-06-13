@@ -1,5 +1,5 @@
 # Liftoff
-![Optional Text](https://user-images.githubusercontent.com/29218752/84542537-a8484780-acc7-11ea-85b4-e0488ec15e59.jpg)
+![Optional Text](https://user-images.githubusercontent.com/29218752/84576903-18b59e00-ad86-11ea-82b1-07789059a735.jpg)
 ## Overview
 Liftoff is tool to lift over gff3/gtf annotations from one genome assembly to another of the same species or closely related species. Most lift over tools lift each interval in a gff file over seperately which often results in gene mappings that do not make sense biologically. Liftoff instead is designed to accurately map full gene sequences onto new assemblies. It can map genes onto chromsomal regions that have been rearranged in the new assemblies, as well as resolve the correct mappings of homologous genes. 
 
