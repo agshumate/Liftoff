@@ -13,82 +13,103 @@ import copy
 
 
 def align_features_to_target(ref_chroms, target_chroms, processes, target_fasta, parent_dict, children_dict,
-                             search_type, unmapped_features):
+                             search_type, unmapped_features, reference_fasta, minimap2_path, inter_files):
     print("aligning features")
-    split_target_sequence(target_chroms,target_fasta )
+    split_target_sequence(target_chroms,target_fasta, inter_files )
+    aligned_segments_dict = {}
     threads_per_alignment = max(1, math.floor(processes / len(ref_chroms)))
     sam_files = []
-    aligned_segments_dict = {}
     pool = Pool(processes)
-    func = partial(align_subset, ref_chroms, target_chroms, threads_per_alignment, target_fasta)
+    func = partial(align_subset, ref_chroms, target_chroms, threads_per_alignment, target_fasta, reference_fasta, minimap2_path, inter_files)
     for result in pool.imap_unordered(func, np.arange(0,len(ref_chroms))):
         sam_files.append(result)
     pool.close()
     pool.join()
     for file in sam_files:
-        aligned_segments = parse_alignment(file, parent_dict, children_dict, unmapped_features)
+        aligned_segments = parse_alignment(file, parent_dict, children_dict, unmapped_features, search_type)
         aligned_segments_dict.update(aligned_segments)
-    if search_type == "copies":
-        aligned_segments = expand_results(aligned_segments_dict)
-    else:
-        aligned_segments = rename_aligned_segs(aligned_segments_dict)
-    return aligned_segments
+    return aligned_segments_dict
 
 
-def split_target_sequence(target_chroms, target_fasta_name):
+def split_target_sequence(target_chroms, target_fasta_name, inter_files):
     Faidx(target_fasta_name)
     target_fasta = Fasta(target_fasta_name, key_function = lambda x: x.split()[0])
     for chrm in target_chroms:
         if chrm != target_fasta_name:
-            out=open( "intermediate_files/" + chrm+".fa", 'w')
+            out=open( inter_files + "/" + chrm+".fa", 'w')
             out.write(">" + chrm + "\n" + str(target_fasta[chrm]))
 
 
 
-def align_subset(ref_chroms, target_chroms, threads, target_fasta_name, index):
-    features_file =  "intermediate_files/" + ref_chroms[index] + "_genes.fa"
+def align_subset(ref_chroms, target_chroms, threads, target_fasta_name, reference_fasta_name, minimap2_path, inter_files, index):
+    if ref_chroms[index] == reference_fasta_name:
+        features_name = 'reference_all'
+    else:
+        features_name = ref_chroms[index]
+    features_file =  inter_files+ "/" + features_name + "_genes.fa"
     if target_chroms[index] == target_fasta_name:
         target_file = target_fasta_name
+        out_file_target = "target_all"
     else:
-        target_file =  "intermediate_files/" +target_chroms[index] + ".fa"
-    out_arg = "-o" + "intermediate_files/"+ ref_chroms[index] + "_to_" + target_chroms[index] + ".sam"
-    threads_arg = "-t" + str(threads)
-    subprocess.run(['minimap2', out_arg, target_file, features_file, '-a', '--eqx', '-N50', '-p 0.5', threads_arg],
+        target_file = inter_files + "/" +target_chroms[index] + ".fa"
+        out_file_target = target_chroms[index]
+    out_arg = inter_files + "/"+ features_name + "_to_" + out_file_target + ".sam"
+    threads_arg =  str(threads)
+    if minimap2_path is None:
+        minimap2 = "minimap2"
+    else:
+        minimap2= minimap2_path
+    split_prefix = features_name + "_to_" + out_file_target + "_split"
+    subprocess.run([minimap2, '-o', out_arg, target_file, features_file, '-a', '--eqx', '-N', '50', '-p',  '0.5', '-t', threads_arg ,  '--split-prefix', split_prefix],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    return "intermediate_files/"+ ref_chroms[index] + "_to_" + target_chroms[index] + ".sam"
+    return inter_files + "/"+ features_name + "_to_" + out_file_target + ".sam"
 
 
-def parse_alignment(file, parent_dict, children_dict, unmapped_features):
+def edit_name(search_type, ref_seq, name_dict):
+    if search_type != "copies":
+        return ref_seq.query_name + "_1"
+    else:
+        if ref_seq.query_name not in name_dict:
+            name_dict[ref_seq.query_name] = 0
+        name_dict[ref_seq.query_name] += 1
+        return ref_seq.query_name + "_" + str(name_dict[ref_seq.query_name])
+
+def parse_alignment(file, parent_dict, children_dict, unmapped_features, search_type):
     all_aligned_blocks ={}
-    sam_file = pysam.AlignmentFile(file,'r')
+    sam_file = pysam.AlignmentFile(file,'r',check_sq=False, check_header=False)
     sam_file_iter= sam_file.fetch()
     aln_id = 0
+    name_dict = {}
     for ref_seq in sam_file_iter:
+
         if ref_seq.is_unmapped is False:
+            ref_seq.query_name = edit_name(search_type, ref_seq, name_dict)
             aln_id += 1
-            aligned_blocks = get_aligned_blocks(ref_seq, aln_id, children_dict, parent_dict)
+            aligned_blocks = get_aligned_blocks(ref_seq, aln_id, children_dict, parent_dict, search_type)
             if ref_seq.query_name in all_aligned_blocks:
                 all_aligned_blocks[ref_seq.query_name].extend(aligned_blocks)
             else:
                 all_aligned_blocks[ref_seq.query_name]=aligned_blocks
-
-
         else:
             unmapped_features.append(parent_dict[ref_seq.query_name])
     unaligned_exons = []
     for seq in all_aligned_blocks:
         if all_aligned_blocks[seq]==[]:
             unaligned_exons.append(seq)
-            unmapped_features.append(parent_dict[seq])
+            unmapped_features.append(parent_dict[liftoff_utils.convert_id_to_original(seq)])
     for seq in unaligned_exons:
         del all_aligned_blocks[seq]
     return all_aligned_blocks
 
 
-def get_aligned_blocks(alignment, aln_id, children_dict, parent_dict):
+def get_aligned_blocks(alignment, aln_id, children_dict, parent_dict, search_type):
     cigar = alignment.cigar
     query_start = alignment.query_alignment_start
     query_end = alignment.query_alignment_end
+    children = children_dict[liftoff_utils.convert_id_to_original(alignment.query_name)]
+    parent = parent_dict[liftoff_utils.convert_id_to_original(alignment.query_name)]
+    if parent.end - parent.start +1 != query_end - query_start and search_type == "copies":
+        return []
     reference_block_start = alignment.reference_start
     reference_block_pos = reference_block_start
     if cigar[0][0] == 5:
@@ -98,8 +119,6 @@ def get_aligned_blocks(alignment, aln_id, children_dict, parent_dict):
     query_block_pos = query_block_start
     new_blocks = []
     mismatches = []
-    children = children_dict[alignment.query_name]
-    parent = parent_dict[alignment.query_name]
     merged_children_coords = liftoff_utils.merge_children_intervals(children)
     for operation, length in cigar:
         if operation == 7 or operation == 8:
@@ -153,37 +172,3 @@ def contains_child(aln, children_coords, parent):
     return False
 
 
-def expand_results(all_aligned_segs):
-    new_aligned_seg_dict = {}
-    for ref_seq in all_aligned_segs:
-        num_aligned_segs = count_num_segs(all_aligned_segs[ref_seq])
-        for i in range(num_aligned_segs):
-            seg_id = str(i +2)
-            new_aligned_seg_name = ref_seq + "_"+ seg_id
-            new_aligned_seg = create_new_aligned_seg(all_aligned_segs[ref_seq], i)
-            new_aligned_seg.query = new_aligned_seg_name
-            new_aligned_seg_dict[new_aligned_seg] = new_aligned_seg_name
-    return new_aligned_seg_dict
-
-
-def count_num_segs(ref_seq):
-    return len(ref_seq)
-
-
-def create_new_aligned_seg(ref_seq, aln_num):
-    new_aligned_seg = copy.deepcopy(ref_seq)
-    aln_count = -1
-    for aln in new_aligned_seg[:]:
-        aln_count += 1
-        if aln_count != aln_num:
-                new_aligned_seg.remove(aln)
-    return new_aligned_seg
-
-def rename_aligned_segs(all_aligned_segs):
-    renamed_aligned_segs = {}
-    for aln in all_aligned_segs:
-        new_name = aln+ "_0"
-        renamed_aligned_segs[new_name] = all_aligned_segs[aln]
-        for aln in renamed_aligned_segs[new_name]:
-            aln.query_name = new_name
-    return renamed_aligned_segs

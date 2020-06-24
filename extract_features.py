@@ -6,24 +6,28 @@ import liftoff_utils
 import os
 
 
-def extract_features_to_lift(g_arg, db_arg, ref_chroms, reference_fasta, processes, infer_transcripts):
+def extract_features_to_lift(g_arg, db_arg, ref_chroms, reference_fasta, processes, infer_transcripts, infer_genes, inter_files):
     print("extracting features")
-    if os.path.exists("intermediate_files") is False:
-        os.mkdir("intermediate_files")
-    feature_db, feature_db_name = create_feature_db_connections(g_arg, db_arg, infer_transcripts)
+    if os.path.exists(inter_files) is False:
+        os.mkdir(inter_files)
+    feature_db, feature_db_name = create_feature_db_connections(g_arg, db_arg, infer_transcripts, infer_genes)
     parent_dict, child_dict, intermediate_dict, parent_order= seperate_parents_and_children(feature_db)
-    get_gene_sequences(parent_dict, ref_chroms, reference_fasta, processes)
+    get_gene_sequences(parent_dict, ref_chroms, reference_fasta, processes, inter_files)
     return parent_dict, child_dict, intermediate_dict, feature_db, parent_order
 
 
-def create_feature_db_connections(g_arg, db_arg, infer_transcripts):
+def create_feature_db_connections(g_arg, db_arg, infer_transcripts, infer_genes):
     if infer_transcripts is True:
-        disable = False
+        disable_transcripts = False
     else:
-        disable = True
+        disable_transcripts = True
+    if infer_genes is True:
+        disable_genes = False
+    else:
+        disable_genes = True
     if db_arg is None:
         feature_db = gffutils.create_db(g_arg, g_arg + "_db", merge_strategy="create_unique", force=True,
-                                 disable_infer_transcripts=disable, disable_infer_genes=True, verbose=True)
+                                 disable_infer_transcripts=disable_transcripts, disable_infer_genes=disable_genes, verbose=True)
         feature_db_name = db_arg
     else:
         feature_db = gffutils.FeatureDB(db_arg)
@@ -67,11 +71,13 @@ def find_feature_type_order(feature_types, feature_db):
     parent_types, intermediate_types, child_types = [],[],[]
     for feature_type in feature_types:
         for feature in feature_db.features_of_type(featuretype=feature_type):
-            if has_child(feature, feature_db) is False:
+            is_child = has_child(feature, feature_db) is False
+            is_parent = has_parent(feature, feature_db) is False
+            if is_child:
                 child_types.append(feature_type)
-            elif has_parent(feature, feature_db) is False:
+            if is_parent:
                 parent_types.append(feature_type)
-            else:
+            if is_parent is False and is_child is False:
                 intermediate_types.append(feature_type)
             break
     return parent_types, child_types, intermediate_types
@@ -92,10 +98,10 @@ def has_child(feature, feature_db):
 
 
 
-def get_gene_sequences(parent_dict, ref_chroms, reference_fasta_name, processes):
+def get_gene_sequences(parent_dict, ref_chroms, reference_fasta_name, processes, inter_files):
     pool = Pool(processes)
     Faidx(reference_fasta_name)
-    func = partial(get_gene_sequences_subset, parent_dict, reference_fasta_name)
+    func = partial(get_gene_sequences_subset, parent_dict, reference_fasta_name, inter_files)
     for result in pool.imap_unordered(func, ref_chroms):
         continue
     pool.close()
@@ -103,9 +109,13 @@ def get_gene_sequences(parent_dict, ref_chroms, reference_fasta_name, processes)
     return
 
 
-def get_gene_sequences_subset(parent_dict, reference_fasta_name, chrom_name):
+def get_gene_sequences_subset(parent_dict, reference_fasta_name,  inter_files, chrom_name):
     reference_fasta = Fasta(reference_fasta_name)
-    fasta_out = open("intermediate_files/"+chrom_name + "_genes.fa", 'w')
+    if chrom_name  == reference_fasta_name:
+        fasta_out_name = "reference_all"
+    else:
+        fasta_out_name = chrom_name
+    fasta_out = open(inter_files+"/"+fasta_out_name + "_genes.fa", 'w')
     sorted_parents = sorted(list(parent_dict.values()), key=lambda x: x.seqid)
     if chrom_name == reference_fasta_name:
         current_chrom = sorted_parents[0].seqid

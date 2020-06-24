@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def count_overlap(start1, end1, start2, end2):
     overlap = min(end1, end2) - max(start1, start2)
     return overlap
@@ -25,16 +26,6 @@ def merge_children_intervals(children):
     return merged
 
 
-def find_children(gene_db, parent):
-    lowest_children=[]
-    all_children = gene_db.children(parent.id)
-    for child in all_children:
-        if has_child(child, gene_db) is False:
-            lowest_children.append(child)
-    if len(lowest_children) == 0:
-        lowest_children.append(parent)
-    lowest_children.sort(key=lambda x: (int(x.start), int(x.end)))
-    return lowest_children
 
 def get_parent_list(feature_list, parent_dict):
     parent_list = []
@@ -62,3 +53,23 @@ def find_parent_order(parents):
     parents.sort(key=lambda x: (x.seqid, x.start))
     return np.array([parent.id for parent in parents])
 
+
+def convert_id_to_original(id):
+    copy_tag_len = len(id.split("_")[-1])
+    original_parent_name = id[:-copy_tag_len-1]
+    return original_parent_name
+
+
+def get_copy_tag(id):
+    copy_tag_len = len(id.split("_")[-1])
+    copy_tag = id[-copy_tag_len-1:]
+    return copy_tag
+
+
+def make_new_feature(copied_feature, new_start, new_end, new_strand, new_seqid):
+    copied_feature.seqid = new_seqid
+    copied_feature.source="Liftoff"
+    copied_feature.start=new_start
+    copied_feature.end=new_end
+    copied_feature.strand=new_strand
+    return copied_feature

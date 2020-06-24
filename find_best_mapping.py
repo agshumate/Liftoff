@@ -8,7 +8,7 @@ import copy
 
 
 
-def find_best_mapping(alignments, query_length,  parent, coords_to_exclude, children_dict, previous_gene_start):
+def find_best_mapping(alignments, query_length,  parent, coords_to_exclude, children_dict, previous_gene_start, copy_tag):
     children = children_dict[parent.id]
     children_coords = liftoff_utils.merge_children_intervals(children)
     node_dict, aln_graph = intialize_graph()
@@ -26,12 +26,8 @@ def find_best_mapping(alignments, query_length,  parent, coords_to_exclude, chil
         shortest_path_nodes.append(node_dict[node_name])
     if len(shortest_path_nodes) == 0:
         return {}, shortest_path_weight, 0,0
-    mapped_children, alignment_coverage, seq_id = convert_all_children_coords(shortest_path_nodes, children, parent)
+    mapped_children, alignment_coverage, seq_id = convert_all_children_coords(shortest_path_nodes, children, parent, copy_tag)
     return mapped_children, shortest_path_weight, alignment_coverage, seq_id
-
-
-
-
 
 
 
@@ -64,7 +60,6 @@ def chain_alignments(head_nodes, node_dict, aln_graph, coords_to_exclude, parent
 def add_edges(head_node_name, node_dict, aln_graph, coords_to_exclude, parent, children_coords):
     for node_name in node_dict:
         from_node = node_dict[node_name]
-        #if is_terminal_node(node_name, aln_graph):
         if is_valid_edge(node_dict[node_name], node_dict[head_node_name], coords_to_exclude, parent):
             edge_weight = get_edge_weight(from_node, node_dict[head_node_name], children_coords, parent)
             aln_graph.add_edge(node_name, head_node_name, cost=edge_weight)
@@ -118,7 +113,10 @@ def add_single_alignments(node_dict, aln_graph, alignments, children_coords, par
     return head_nodes
 
 
-def convert_all_children_coords(shortest_path_nodes, children, parent):
+
+
+
+def convert_all_children_coords(shortest_path_nodes, children, parent, copy_tag):
     shortest_path_nodes.sort(key=lambda x: x.query_block_start)
     mapped_children = {}
     aligned_bases, total_bases, mismatches= set([]), set([]), set([])
@@ -142,12 +140,10 @@ def convert_all_children_coords(shortest_path_nodes, children, parent):
         mismatches.update(mismatched_bases)
         if  lifted_start !=0:
             strand = get_strand(shortest_path_nodes[0], parent)
-            mapped_children[child.id] = gffutils.Feature(id=child.id, seqid=shortest_path_nodes[0].reference_name,
-                                                         start=min(lifted_start, lifted_end) + 1,
-                                                         end=max(lifted_start, lifted_end) + 1,
-                                                         featuretype=child.featuretype, source="Liftoff",
-                                                         attributes=child.attributes, strand=strand)
+            new_child= liftoff_utils.make_new_feature(copy.deepcopy(child), min(lifted_start, lifted_end) + 1, max(lifted_start, lifted_end) + 1, strand, shortest_path_nodes[0].reference_name)
+            mapped_children[new_child.id] = new_child
     return mapped_children, len(aligned_bases)/len(total_bases), (len(aligned_bases)-len(mismatches))/len(total_bases)
+
 
 def find_mismatched_bases(start,end, shortest_path_nodes, parent):
     all_mismatches = []
