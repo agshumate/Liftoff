@@ -1,7 +1,7 @@
 # Liftoff
 
 ## Overview
-Liftoff is tool to lift over gff3/gtf annotations from one genome assembly to another of the same species or closely related species. Most lift over tools lift each interval in a gff file over seperately which often results in gene mappings that do not make sense biologically. Liftoff instead is designed to accurately map full gene sequences onto new assemblies. It can map genes onto chromsomal regions that have been rearranged in the new assemblies, as well as resolve the correct mappings of homologous genes. 
+Here we introduce Liftoff, an accurate tool that maps annotations in GFF or GTF between assemblies of the same, or closely-related species. Unlike current coordinate lift-over tools which require a pre-generated “chain” file as input, Liftoff is a standalone tool that takes two genome assemblies and a reference annotation as input and outputs an annotation of the target genome. Liftoff uses Minimap2 [(Li, 2018)](https://academic.oup.com/bioinformatics/article/34/18/3094/4994778) to align the gene sequences from a reference genome to the target genome. Rather than aligning whole genomes, aligning only the gene sequences allows genes to be lifted over even if there are many structural differences between the two genomes. For each gene, Liftoff finds the alignments of the exons that maximize sequence identity while preserving the transcript and gene structure.  If two genes incorrectly map to overlapping loci, Liftoff determines which gene is most-likely mis-mapped, and attempts to re-map it. Liftoff can also find additional gene copies present in the target assembly that are not annotated in the reference.
 <p align="center">
   <img src="https://user-images.githubusercontent.com/29218752/84577010-d0e34680-ad86-11ea-89a2-1638b970dcad.jpg">
 </p>
@@ -9,12 +9,12 @@ Liftoff is tool to lift over gff3/gtf annotations from one genome assembly to an
 ### Getting Started
 
 #### Step 1:
-Liftoff requires Minimap2 which can be installed by following instructions [here](https://github.com/lh3/minimap2/releases/tag/v2.17). It can also be installed with conda with the following command
+Liftoff requires Python3 and also depends on Minimap2. Minimap2 which can be installed by following instructions [here](https://github.com/lh3/minimap2/releases/tag/v2.17). It can also be installed with conda with the following command
 
 ```
 conda install -c bioconda minimap2
 ```
-Make sure minimap2 is in your path after installation 
+Add minimap2 is in your path after installation or use the -m argument when running Liftoff to specficy a different path 
 
 
 #### Step 2: 
@@ -32,25 +32,49 @@ python setup.py install
 
 ### USAGE
 ```
-usage: liftoff.py [-h] -t target fasta -r reference fasta [-g gff or gtf]
-                  [-chroms chromosome names] [-p num processess] [-o outfile]
-                  [-db feature database] [-infer_transcripts]
+usage: liftoff.py [-h] -t <target.fasta> -r <reference.fasta>
+                  [-g <ref_annotation.gff>] [-chroms <chroms.txt>] [-p 1]
+                  [-o <output.gff>] [-db DB] [-infer_transcripts]
+                  [-u <unmapped_features.txt>] [-infer_genes] [-a 0.5]
+                  [-s 0.5] [-unplaced <unplaced_seq_names.txt>] [-copies]
+                  [-sc 1.0] [-m PATH] [-dir <intermediate_files_dir>]
 
 Lift features from one genome assembly to another
 
 optional arguments:
   -h, --help            show this help message and exit
-  -t target fasta       target fasta genome to lift genes to
-  -r reference fasta    reference fasta genome to lift genes from
-  -g gff or gtf         annotation file to lift over in gff or gtf format
-  -chroms chromosome names
-                        comma seperated file with corresponding chromosomes in
+  -t <target.fasta>     target fasta genome to lift genes to
+  -r <reference.fasta>  reference fasta genome to lift genes from
+  -g <ref_annotation.gff>
+                        annotation file to lift over in gff or gtf format
+  -chroms <chroms.txt>  comma seperated file with corresponding chromosomes in
                         the reference,target sequences
-  -p num processess     processes
-  -o outfile            output file
-  -db feature database  name of feature database. If none, -g argument must be
+  -p 1                  processes
+  -o <output.gff>       output file
+  -db DB                name of feature database. If none, -g argument must be
                         provided and a database will be built automatically
-  -infer_transcripts    use if GTF file only includes exon/CDS features
+  -infer_transcripts    use if GTF file only includes exon/CDS features and
+                        does not include transcripts/mRNA
+  -u <unmapped_features.txt>
+                        name of file to write unmapped features to
+  -infer_genes          use if GTF file only includes transcripts, exon/CDS
+                        features
+  -a 0.5                minimum alignment coverage to consider a feature
+                        mapped [0-1]
+  -s 0.5                minimum sequence identity in child features (usually
+                        exons/CDS) to consider a feature mapped [0-1]
+  -unplaced <unplaced_seq_names.txt>
+                        text file with name(s) of unplaced sequences to map
+                        genes from after genes from chromosomes in chroms.txt
+                        are mapped
+  -copies               look for extra gene copies in the target genome
+  -sc 1.0               with -copies, minimum sequence identity in exons/CDS
+                        for which a gene is considered a copy. Must be greater
+                        than -s
+  -m PATH               Minimap2 path
+  -dir <intermediate_files_dir>
+                        name of directory to save intermediate fasta and SAM
+                        files
  
 ```
 The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation or feature database. If an annotation file is provided with the -g argument, a feature database will be built automatically and can be used for future lift overs by providing the -db argument. For chromosome-scale assemblies of the same species, performing the lift over chromosome by chromosome is much faster. This option can be enabled by providing a  comma seperated file chroms.txt with corresponding chromosome names with the -chroms argument. Each line of the file should follow {ref_chrom_name},{target_chrom_name} for each pair of corresponding chromosomes. For example, a lift over from a Genbank human assembly to a Refseq human assembly would have the following chroms.txt file. 
@@ -80,4 +104,4 @@ chr22,NC_000022.10
 chrX,NC_000023.10
 chrY,NC_000024.9
 ```
-After the chromosome by chromosome lift over is complete, any genes that did not map will be aligned agaisnt the whole genome. 
+After the chromosome by chromosome lift over is complete, any genes that did not map will be aligned to the whole genome. 
