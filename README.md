@@ -35,9 +35,9 @@ python setup.py install
 usage: liftoff.py [-h] -t <target.fasta> -r <reference.fasta>
                   [-g <ref_annotation.gff>] [-chroms <chroms.txt>] [-p 1]
                   [-o <output.gff>] [-db DB] [-infer_transcripts]
-                  [-u <unmapped_features.txt>] [-infer_genes]
-                  [-unplaced <unplaced_seq_names.txt>] [-a 0.5] [-copies]
-                  [-s 0.5] [-sc 1.0] [-m PATH] [-dir <intermediate_files_dir>]
+                  [-u <unmapped_features.txt>] [-infer_genes] [-a 0.5]
+                  [-s 0.5] [-unplaced <unplaced_seq_names.txt>] [-copies]
+                  [-sc 1.0] [-m PATH] [-dir <intermediate_files_dir>]
 
 Lift features from one genome assembly to another
 
@@ -59,15 +59,15 @@ optional arguments:
                         name of file to write unmapped features to
   -infer_genes          use if GTF file only includes transcripts, exon/CDS
                         features
+  -a 0.5                minimum alignment coverage to consider a feature
+                        mapped [0-1]
+  -s 0.5                minimum sequence identity to consider a feature mapped
+                        [0-1]
   -unplaced <unplaced_seq_names.txt>
                         text file with name(s) of unplaced sequences to map
                         genes from after genes from chromosomes in chroms.txt
                         are mapped
-  -a 0.5                minimum alignment coverage to consider a feature
-                        mapped [0-1]
   -copies               look for extra gene copies in the target genome
-  -s 0.5                minimum sequence identity to consider a feature mapped
-                        [0-1]
   -sc 1.0               with -copies, minimum sequence identity for which a
                         gene is considered a copy. Must be greater than -s
   -m PATH               Minimap2 path
