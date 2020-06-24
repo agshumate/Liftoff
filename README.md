@@ -61,15 +61,16 @@ optional arguments:
                         features
   -a 0.5                minimum alignment coverage to consider a feature
                         mapped [0-1]
-  -s 0.5                minimum sequence identity to consider a feature mapped
-                        [0-1]
+  -s 0.5                minimum sequence identity in child features (usually
+                        exons/CDS) to consider a feature mapped [0-1]
   -unplaced <unplaced_seq_names.txt>
                         text file with name(s) of unplaced sequences to map
                         genes from after genes from chromosomes in chroms.txt
                         are mapped
   -copies               look for extra gene copies in the target genome
-  -sc 1.0               with -copies, minimum sequence identity for which a
-                        gene is considered a copy. Must be greater than -s
+  -sc 1.0               with -copies, minimum sequence identity in exons/CDS
+                        for which a gene is considered a copy. Must be greater
+                        than -s
   -m PATH               Minimap2 path
   -dir <intermediate_files_dir>
                         name of directory to save intermediate fasta and SAM
