@@ -1,7 +1,9 @@
 # Liftoff
 
 ## Overview
-Here we introduce Liftoff, an accurate tool that maps annotations in GFF or GTF between assemblies of the same, or closely-related species. Unlike current coordinate lift-over tools which require a pre-generated “chain” file as input, Liftoff is a standalone tool that takes two genome assemblies and a reference annotation as input and outputs an annotation of the target genome. Liftoff uses Minimap2 [(Li, 2018)](https://academic.oup.com/bioinformatics/article/34/18/3094/4994778) to align the gene sequences from a reference genome to the target genome. Rather than aligning whole genomes, aligning only the gene sequences allows genes to be lifted over even if there are many structural differences between the two genomes. For each gene, Liftoff finds the alignments of the exons that maximize sequence identity while preserving the transcript and gene structure.  If two genes incorrectly map to overlapping loci, Liftoff determines which gene is most-likely mis-mapped, and attempts to re-map it. Liftoff can also find additional gene copies present in the target assembly that are not annotated in the reference.
+Here we introduce Liftoff, an accurate tool that maps annotations in GFF or GTF between assemblies of the same, or closely-related species. Unlike current coordinate lift-over tools which require a pre-generated “chain” file as input, Liftoff is a standalone tool that takes two genome assemblies and a reference annotation as input and outputs an annotation of the target genome. Liftoff uses Minimap2 [(Li, 2018)](https://academic.oup.com/bioinformatics/article/34/18/3094/4994778) to align the gene sequences from a reference genome to the target genome. Rather than aligning whole genomes, aligning only the gene sequences allows genes to be lifted over even if there are many structural differences between the two genomes. For each gene, Liftoff finds the alignments of the exons that maximize sequence identity while preserving the transcript and gene structure.  If two genes incorrectly map to overlapping loci, Liftoff determines which gene is most-likely mis-mapped, and attempts to re-map it. Liftoff can also find additional gene copies present in the target assembly that are not annotated in the reference. 
+
+Liftoff is not limited to genes, transcripts and exons. It can transfer annotations of any feature types present in a GFF file. For any feature or group of features regardless of type, Liftoff aligns the parent feature to the genome, and then converts the coordinates of the child features while preserving the structure of each child and parent. 
 <p align="center">
   <img src="https://user-images.githubusercontent.com/29218752/84577010-d0e34680-ad86-11ea-89a2-1638b970dcad.jpg">
 </p>
@@ -77,7 +79,12 @@ optional arguments:
                         files
  
 ```
-The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation or feature database. If an annotation file is provided with the -g argument, a feature database will be built automatically and can be used for future lift overs by providing the -db argument. For chromosome-scale assemblies of the same species, performing the lift over chromosome by chromosome is much faster. This option can be enabled by providing a  comma seperated file chroms.txt with corresponding chromosome names with the -chroms argument. Each line of the file should follow {ref_chrom_name},{target_chrom_name} for each pair of corresponding chromosomes. For example, a lift over from a Genbank human assembly to a Refseq human assembly would have the following chroms.txt file. 
+The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation or feature database. If an annotation file is provided with the -g argument, a feature database will be built automatically and can be used for future lift overs by providing the -db argument. 
+
+By default, a gene (or other parent feature) will only be considered mapped successfully if the alignment coverage and sequence identity in the chlild features (usually exons/CDS) is > 50%. The alignment coverage threshold can be changed with the -a option. Any genes mapping with a coverage below the threshold will be present in the GFF file with the tag partial_mapping=True. The sequence identity threshold can be changed with the -s option. Any genes mapping with a lower sequence identity will be present in the GFF file with the tag low_identity=True. 
+
+
+For chromosome-scale assemblies of the same species, performing the lift over chromosome by chromosome is much faster. This option can be enabled by providing a  comma seperated file chroms.txt with corresponding chromosome names with the -chroms argument. Each line of the file should follow {ref_chrom_name},{target_chrom_name} for each pair of corresponding chromosomes. For example, a lift over from a Genbank human assembly to a Refseq human assembly would have the following chroms.txt file. 
  ```
 chr1,NC_000001.10
 chr2,NC_000002.11
@@ -105,3 +112,5 @@ chrX,NC_000023.10
 chrY,NC_000024.9
 ```
 After the chromosome by chromosome lift over is complete, any genes that did not map will be aligned to the whole genome. 
+
+
