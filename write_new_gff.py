@@ -49,6 +49,7 @@ def write_new_gff(lifted_features, out_file,  parent_dict, cov_threshold,seq_thr
 def build_parent_dict(child_features, parent_dict):
     parent_child_dict = {}
     for child in child_features:
+
         if child.id not in parent_dict:
             if child.attributes["Parent"][0] in parent_child_dict:
                 parent_child_dict[child.attributes["Parent"][0]].append(child)
@@ -61,7 +62,7 @@ def build_parent_dict(child_features, parent_dict):
 def write_feature(children, outfile, child_features, parent_dict):
     for child in children:
         write_line(child, outfile)
-        if child["ID"][0] in parent_dict:
-            new_children= parent_dict[child["ID"][0]]
+        if child.id in parent_dict:
+            new_children= parent_dict[child.id]
             write_feature(new_children, outfile, child_features, parent_dict)
     return

@@ -63,8 +63,15 @@ def seperate_parents_and_children(feature_db):
 
 
 def add_parent_tag(feature, feature_db):
-    parent = list(feature_db.parents(feature, level=1))[0]
-    feature.attributes["Parent"]= parent.id
+    parent_id = ""
+    parents = list(feature_db.parents(feature, level=1))
+    if len(parents) > 0:
+        parent_id = parents[0].id
+    else:
+        parents = list(feature_db.parents(feature))
+        if len(parents) > 0:
+            parent_id = parents[0].id
+    feature.attributes["Parent"]= parent_id
 
 
 def find_feature_type_order(feature_types, feature_db):

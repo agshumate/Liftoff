@@ -22,7 +22,7 @@ def lift_original_annotation(gff, target_fasta, reference_fasta, ref_chroms, tar
     fix_overlapping_features.fix_incorrectly_overlapping_features(lifted_feature_list, lifted_feature_list, parent_dict,
                                                                   aligned_segments, unmapped_features,
                                                                   cov_threshold, intermediate_dict, children_dict,
-                                                                  feature_db, original_parent_order, seq_threshold)
+                                                                  feature_db, original_parent_order, seq_threshold, "chrm_by_chrm")
     return feature_db, parent_dict, intermediate_dict, children_dict, original_parent_order
 
 
@@ -38,12 +38,13 @@ def map_unmapped_genes_agaisnt_all(unmapped_features, target_fasta, reference_fa
     aligned_segments=align_features.align_features_to_target(ref_chroms, target_chroms, processes, target_fasta,
                                                                unmapped_dict, children_dict, "missing", unmapped_features, reference_fasta,
                                                              minimap2_path,inter_files, True)
+    print("lifting features")
     lift_features.lift_all_features(aligned_segments, {}, 0.0, feature_db, unmapped_dict, children_dict,
                                     intermediate_dict, unmapped_features, lifted_feature_list, 0.0)
     fix_overlapping_features.fix_incorrectly_overlapping_features(lifted_feature_list, lifted_feature_list, parent_dict,
                                                                   aligned_segments, unmapped_features, 0.0,
                                                                   intermediate_dict, children_dict, feature_db,
-                                                                   parent_order, 0.0)
+                                                                   parent_order, 0.0, "missing")
     return unmapped_features
 
 
@@ -60,11 +61,12 @@ def map_unplaced_genes(unmapped_features, target_fasta, reference_fasta, ref_chr
     aligned_segments=align_features.align_features_to_target(ref_chroms, target_chroms, processes, target_fasta,
                                                                unplaced_dict, children_dict, "unplaced", unmapped_features,
                                                              reference_fasta,minimap2_path,inter_files, True)
+    print("lifting features")
     lift_features.lift_all_features(aligned_segments, {}, 0.0, feature_db, unplaced_dict, children_dict,
                                     intermediate_dict, unmapped_features, lifted_feature_list, 0.0)
     fix_overlapping_features.fix_incorrectly_overlapping_features(lifted_feature_list, lifted_feature_list, parent_dict,
                                                                   aligned_segments, unmapped_features, 0.0,
-                                                                  intermediate_dict, children_dict, feature_db, parent_order, 0.0)
+                                                                  intermediate_dict, children_dict, feature_db, parent_order, 0.0, "unplaced")
 
 
 
@@ -78,9 +80,11 @@ def map_extra_copies(target_fasta, reference_fasta, ref_chroms, target_chroms, p
                                                                parent_dict, children_dict, "copies", unmapped_features, reference_fasta,
                                                              minimap2_path,inter_files, remap
                                                              )
+
+    print("lifting features")
     lift_features.lift_all_features(aligned_segments, {}, 0.0, feature_db, parent_dict, children_dict,
                                     intermediate_dict, unmapped_features, lifted_feature_list, seq_threshold)
     fix_overlapping_features.fix_incorrectly_overlapping_features(lifted_feature_list, lifted_feature_list, parent_dict,
                                                                   aligned_segments, unmapped_features, 0.0,
-                                                                  intermediate_dict, children_dict, feature_db, parent_order, seq_threshold)
+                                                                  intermediate_dict, children_dict, feature_db, parent_order, seq_threshold, "copies")
 

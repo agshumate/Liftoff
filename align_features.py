@@ -82,7 +82,6 @@ def parse_alignment(file, parent_dict, children_dict, unmapped_features, search_
     aln_id = 0
     name_dict = {}
     for ref_seq in sam_file_iter:
-
         if ref_seq.is_unmapped is False:
             ref_seq.query_name = edit_name(search_type, ref_seq, name_dict)
             aln_id += 1

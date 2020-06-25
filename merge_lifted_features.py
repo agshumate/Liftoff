@@ -38,7 +38,7 @@ def merge_lifted_features(mapped_children, gene, unmapped_genes, threshold,
     else:
         top_feature.score = 1- seq_id
         top_feature.attributes["copy_id"] = gene_name
-        top_feature.attributes["coverage"] = round(aln_cov,5)
+        top_feature.attributes["coverage"] = str(round(aln_cov,5))
         top_feature.attributes["sequence_ID"] = str(round(seq_id,5))
     return final_features, top_feature.start
 
