@@ -97,8 +97,9 @@ def main():
        print("mapping gene copies")
        ref_chroms = [reference_fasta]
        target_chroms = [target_fasta]
+       remap = chroms_file is not None
        liftover_types.map_extra_copies(target_fasta, reference_fasta, ref_chroms, target_chroms, processes,
-       lifted_feature_list, parent_features, children_features, feature_db, intermediate_features, parent_order, seq_threshold_copies, minimap2_path,inter_files)
+       lifted_feature_list, parent_features, children_features, feature_db, intermediate_features, parent_order, seq_threshold_copies, minimap2_path,inter_files, remap)
 
 
 

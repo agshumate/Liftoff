@@ -13,14 +13,14 @@ import copy
 
 
 def align_features_to_target(ref_chroms, target_chroms, processes, target_fasta, parent_dict, children_dict,
-                             search_type, unmapped_features, reference_fasta, minimap2_path, inter_files):
+                             search_type, unmapped_features, reference_fasta, minimap2_path, inter_files, map):
     print("aligning features")
     split_target_sequence(target_chroms,target_fasta, inter_files )
     aligned_segments_dict = {}
     threads_per_alignment = max(1, math.floor(processes / len(ref_chroms)))
     sam_files = []
     pool = Pool(processes)
-    func = partial(align_subset, ref_chroms, target_chroms, threads_per_alignment, target_fasta, reference_fasta, minimap2_path, inter_files)
+    func = partial(align_subset, ref_chroms, target_chroms, threads_per_alignment, target_fasta, reference_fasta, minimap2_path, inter_files, map)
     for result in pool.imap_unordered(func, np.arange(0,len(ref_chroms))):
         sam_files.append(result)
     pool.close()
@@ -41,7 +41,7 @@ def split_target_sequence(target_chroms, target_fasta_name, inter_files):
 
 
 
-def align_subset(ref_chroms, target_chroms, threads, target_fasta_name, reference_fasta_name, minimap2_path, inter_files, index):
+def align_subset(ref_chroms, target_chroms, threads, target_fasta_name, reference_fasta_name, minimap2_path, inter_files, map, index):
     if ref_chroms[index] == reference_fasta_name:
         features_name = 'reference_all'
     else:
@@ -55,13 +55,14 @@ def align_subset(ref_chroms, target_chroms, threads, target_fasta_name, referenc
         out_file_target = target_chroms[index]
     out_arg = inter_files + "/"+ features_name + "_to_" + out_file_target + ".sam"
     threads_arg =  str(threads)
-    if minimap2_path is None:
-        minimap2 = "minimap2"
-    else:
-        minimap2= minimap2_path
-    split_prefix = features_name + "_to_" + out_file_target + "_split"
-    subprocess.run([minimap2, '-o', out_arg, target_file, features_file, '-a', '--eqx', '-N', '50', '-p',  '0.5', '-t', threads_arg ,  '--split-prefix', split_prefix],
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if map:
+        if minimap2_path is None:
+            minimap2 = "minimap2"
+        else:
+            minimap2= minimap2_path
+        split_prefix = features_name + "_to_" + out_file_target + "_split"
+        subprocess.run([minimap2, '-o', out_arg, target_file, features_file, '-a', '--eqx', '-N', '50', '-p',  '0.5', '-t', threads_arg ,  '--split-prefix', split_prefix],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return inter_files + "/"+ features_name + "_to_" + out_file_target + ".sam"
 
 
