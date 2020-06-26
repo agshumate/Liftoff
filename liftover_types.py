@@ -19,7 +19,6 @@ def lift_original_annotation(gff, target_fasta, reference_fasta, ref_chroms, tar
     print("lifting features")
     lift_features.lift_all_features(aligned_segments, {}, cov_threshold, feature_db, parent_dict, children_dict,
                                     intermediate_dict, unmapped_features, lifted_feature_list, seq_threshold)
-    print("fix homologs")
     fix_overlapping_features.fix_incorrectly_overlapping_features(lifted_feature_list, lifted_feature_list, parent_dict,
                                                                   aligned_segments, unmapped_features,
                                                                   cov_threshold, intermediate_dict, children_dict,
