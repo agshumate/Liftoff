@@ -15,7 +15,7 @@ import copy
 def align_features_to_target(ref_chroms, target_chroms, processes, target_fasta, parent_dict, children_dict,
                              search_type, unmapped_features, reference_fasta, minimap2_path, inter_files, map):
     print("aligning features")
-    #split_target_sequence(target_chroms,target_fasta, inter_files )
+    split_target_sequence(target_chroms,target_fasta, inter_files )
     aligned_segments_dict = {}
     threads_per_alignment = max(1, math.floor(processes / len(ref_chroms)))
     sam_files = []
