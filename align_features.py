@@ -60,8 +60,8 @@ def align_subset(ref_chroms, target_chroms, threads, target_fasta_name, referenc
             minimap2 = "minimap2"
         else:
             minimap2= minimap2_path
-        split_prefix = features_name + "_to_" + out_file_target + "_split"
-        subprocess.run([minimap2, '-o', out_arg, target_file, features_file, '-a', '--eqx', '-N', '50', '-p',  '0.5', '-t', threads_arg ,  '--split-prefix', split_prefix],
+        #split_prefix = features_name + "_to_" + out_file_target + "_split"
+        subprocess.run([minimap2, '-o', out_arg, target_file, features_file, '-a', '--eqx', '-N', '50', '-p',  '0.5', '-t', threads_arg],
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return inter_files + "/"+ features_name + "_to_" + out_file_target + ".sam"
 
