@@ -117,11 +117,11 @@ def resolve_overlapping_homologues(all_aligned_segs, lifted_feature_list, featur
             del lifted_feature_list[feature_to_remap]
             aligned_segs_to_remap[feature_to_remap] = all_aligned_segs[feature_to_remap]
             add_overlapping_feature(features_to_remap, feature_to_remap, all_overlapping_features)
-        if liftover_type != "copies":
-            lift_features.lift_all_features(aligned_segs_to_remap, all_overlapping_features, threshold, feature_db,
+        #if liftover_type != "copies":
+        lift_features.lift_all_features(aligned_segs_to_remap, all_overlapping_features, threshold, feature_db,
                                         parent_dict, children_dict, intermediate_dict, unmapped_features,
                                         lifted_feature_list, seq_id_threshold)
-            clean_overlapping_features(lifted_feature_list, all_overlapping_features, parent_dict, features_to_remap, unmapped_features)
+        clean_overlapping_features(lifted_feature_list, all_overlapping_features, parent_dict, features_to_remap, unmapped_features)
         for feature_to_remap in features_to_remap:
             if feature_to_remap in lifted_feature_list:
                 features_to_check[feature_to_remap] = lifted_feature_list[feature_to_remap]
