@@ -35,6 +35,7 @@ def create_feature_db_connections(g_arg, db_arg, infer_transcripts, infer_genes)
     return feature_db, feature_db_name
 
 
+
 def seperate_parents_and_children(feature_db):
     parent_dict, child_dict, intermediate_dict = {} , {}, {}
     feature_types = feature_db.featuretypes()

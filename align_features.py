@@ -15,12 +15,12 @@ import copy
 def align_features_to_target(ref_chroms, target_chroms, processes, target_fasta, parent_dict, children_dict,
                              search_type, unmapped_features, reference_fasta, minimap2_path, inter_files, map):
     print("aligning features")
-    split_target_sequence(target_chroms,target_fasta, inter_files )
+    genome_size=split_target_sequence(target_chroms,target_fasta, inter_files )
     aligned_segments_dict = {}
     threads_per_alignment = max(1, math.floor(processes / len(ref_chroms)))
     sam_files = []
     pool = Pool(processes)
-    func = partial(align_subset, ref_chroms, target_chroms, threads_per_alignment, target_fasta, reference_fasta, minimap2_path, inter_files, map)
+    func = partial(align_subset, ref_chroms, target_chroms, threads_per_alignment, target_fasta, reference_fasta, minimap2_path, inter_files, map, genome_size)
     for result in pool.imap_unordered(func, np.arange(0,len(ref_chroms))):
         sam_files.append(result)
     pool.close()
@@ -33,15 +33,19 @@ def align_features_to_target(ref_chroms, target_chroms, processes, target_fasta,
 
 def split_target_sequence(target_chroms, target_fasta_name, inter_files):
     Faidx(target_fasta_name)
+    genome_size =0
     target_fasta = Fasta(target_fasta_name, key_function = lambda x: x.split()[0])
+    for value in target_fasta.values():
+        genome_size += len(value)
     for chrm in target_chroms:
         if chrm != target_fasta_name:
             out=open( inter_files + "/" + chrm+".fa", 'w')
             out.write(">" + chrm + "\n" + str(target_fasta[chrm]))
+    return genome_size
 
 
 
-def align_subset(ref_chroms, target_chroms, threads, target_fasta_name, reference_fasta_name, minimap2_path, inter_files, map, index):
+def align_subset(ref_chroms, target_chroms, threads, target_fasta_name, reference_fasta_name, minimap2_path, inter_files, map, genome_size, index):
     if ref_chroms[index] == reference_fasta_name:
         features_name = 'reference_all'
     else:
@@ -60,9 +64,16 @@ def align_subset(ref_chroms, target_chroms, threads, target_fasta_name, referenc
             minimap2 = "minimap2"
         else:
             minimap2= minimap2_path
-        #split_prefix = features_name + "_to_" + out_file_target + "_split"
-        subprocess.run([minimap2, '-o', out_arg, target_file, features_file, '-a', '--eqx', '-N', '50', '-p',  '0.5', '-t', threads_arg],
+        if genome_size > 4000000000:
+            split_prefix = features_name + "_to_" + out_file_target + "_split"
+            subprocess.run([minimap2, '-o', out_arg, target_file, features_file, '-a', '--eqx', '-N', '50', '-p',  '0.5', '-t', threads_arg,"--split-prefix", split_prefix],
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        else:
+            subprocess.run(
+                [minimap2, '-o', out_arg, target_file, features_file, '-a', '--eqx', '-N', '50', '-p', '0.5', '-t',
+                 threads_arg],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
     return inter_files + "/"+ features_name + "_to_" + out_file_target + ".sam"
 
 
