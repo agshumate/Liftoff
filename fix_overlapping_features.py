@@ -38,7 +38,6 @@ def compare_nearby_features(nearby_features, parent_list, feature, remap_feature
     for nearby_feature in nearby_features:
         if nearby_feature.attributes["copy_id"][0] != feature.attributes["copy_id"][0] and feature.strand == nearby_feature.strand:
             if nearby_feature.seqid != feature.seqid or nearby_feature.start > feature.end:
-
                 break
             if nearby_feature.end < feature.start:
                 continue
@@ -159,7 +158,7 @@ def clean_overlapping_features(lifted_feature_list, all_overlapping_features, pa
                 for feature in unmapped_features:
                     if feature.id == feature_name:
                         unmapped_features.remove(feature)
-                        features_to_remap.append(lifted_feature_list[feature.id])
+                        features_to_remap[feature.id]=[(-1, -1, None, None)]
 
 
 def find_overlapping_features(overlapping_features, feature_list):

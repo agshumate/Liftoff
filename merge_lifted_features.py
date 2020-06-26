@@ -59,7 +59,7 @@ def create_parents(orphans, parent_dict, feature_list, intermediate_dict, gene):
                 original_parent = parent_dict[parent]
             else:
                 original_parent = intermediate_dict[parent]
-            parent_feature = liftoff_utils.make_new_feature(copy.deepcopy(original_parent), min(starts), max(ends), children[0].strand, children[0].seqid)
+            parent_feature = liftoff_utils.make_new_feature(copy.copy(original_parent), min(starts), max(ends), children[0].strand, children[0].seqid)
             feature_list[parent_feature.id] = parent_feature
             if parent_feature.id != gene.id:
                 new_orphans.append((parent_feature, parent_feature["Parent"][0]))

@@ -11,7 +11,6 @@ def lift_all_features(alns, all_overlapping_features, threshold,  feature_db, pa
     previous_gene_start = 0
     alignments = sort_alignments(parent_dict, alns)
     for alignment in alignments:
-
         lifted_features, parent_name, previous_gene_start = lift_features_subset(all_overlapping_features, threshold,
                                                                                  feature_order, parent_dict,
                                                                                  children_dict, intermediate_dict,

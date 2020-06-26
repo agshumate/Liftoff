@@ -77,16 +77,17 @@ def add_parent_tag(feature, feature_db):
 def find_feature_type_order(feature_types, feature_db):
     parent_types, intermediate_types, child_types = [],[],[]
     for feature_type in feature_types:
-        for feature in feature_db.features_of_type(featuretype=feature_type):
-            is_child = has_child(feature, feature_db) is False
-            is_parent = has_parent(feature, feature_db) is False
-            if is_child:
-                child_types.append(feature_type)
-            if is_parent:
-                parent_types.append(feature_type)
-            if is_parent is False and is_child is False:
-                intermediate_types.append(feature_type)
-            break
+        if feature_type != "region":
+            for feature in feature_db.features_of_type(featuretype=feature_type):
+                is_child = has_child(feature, feature_db) is False
+                is_parent = has_parent(feature, feature_db) is False
+                if is_child:
+                    child_types.append(feature_type)
+                if is_parent:
+                    parent_types.append(feature_type)
+                if is_parent is False and is_child is False:
+                    intermediate_types.append(feature_type)
+                break
     return parent_types, child_types, intermediate_types
 
 
