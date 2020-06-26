@@ -84,7 +84,7 @@ The only required inputs are the reference genome sequence(fasta format), the ta
 By default, a gene (or other parent feature) will only be considered mapped successfully if the alignment coverage and sequence identity in the chlild features (usually exons/CDS) is > 50%. The alignment coverage threshold can be changed with the -a option. Any genes mapping with a coverage below the threshold will be present in the GFF file with the tag partial_mapping=True. The sequence identity threshold can be changed with the -s option. Any genes mapping with a lower sequence identity will be present in the GFF file with the tag low_identity=True. 
 
 
-For chromosome-scale assemblies of the same species, performing the lift over chromosome by chromosome is much faster. This option can be enabled by providing a  comma seperated file chroms.txt with corresponding chromosome names with the -chroms argument. Each line of the file should follow {ref_chrom_name},{target_chrom_name} for each pair of corresponding chromosomes. For example, a lift over from a Genbank human assembly to a Refseq human assembly would have the following chroms.txt file. 
+For chromosome-scale assemblies of the same species, performing the lift over chromosome by chromosome is much faster. This is also strongly recommended for repetitive/polyploid genomes. This option can be enabled by providing a  comma seperated file chroms.txt with corresponding chromosome names with the -chroms argument. Each line of the file should follow {ref_chrom_name},{target_chrom_name} for each pair of corresponding chromosomes. For example, a lift over from a Genbank human assembly to a Refseq human assembly would have the following chroms.txt file. 
  ```
 chr1,NC_000001.10
 chr2,NC_000002.11
