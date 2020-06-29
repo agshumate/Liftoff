@@ -4,11 +4,11 @@ import liftoff_utils
 
 def fix_incorrectly_overlapping_features(all_lifted_features, features_to_check, parent_dict, all_aligned_segs,
                                          unmapped_features, threshold, intermediate_dict, children_dict, feature_db,
-                                         original_parent_order,seq_id_threshold, liftover_type):
+                                         original_parent_order,seq_id_threshold):
     features_to_remap = check_homologues(all_lifted_features, features_to_check, parent_dict, original_parent_order)
     resolve_overlapping_homologues(all_aligned_segs, all_lifted_features, features_to_remap, unmapped_features,
                                 threshold,  parent_dict, intermediate_dict,
-                                   children_dict, feature_db,original_parent_order, seq_id_threshold, liftover_type)
+                                   children_dict, feature_db,original_parent_order, seq_id_threshold)
 
 
 
@@ -108,7 +108,7 @@ def find_feature_to_remap(feature, overlap_feature, original_parent_order, new_p
 
 def resolve_overlapping_homologues(all_aligned_segs, lifted_feature_list, features_to_remap,  unmapped_features,
                                    threshold,  parent_dict, intermediate_dict, children_dict,
-                                   feature_db,original_parent_order,seq_id_threshold, liftover_type):
+                                   feature_db,original_parent_order,seq_id_threshold):
     all_overlapping_features = {}
     while len(features_to_remap) > 0:
         features_to_check = {}

@@ -20,8 +20,8 @@ def align_features_to_target(ref_chroms, target_chroms, processes, target_fasta,
     threads_per_alignment = max(1, math.floor(processes / len(ref_chroms)))
     sam_files = []
     pool = Pool(processes)
-    func = partial(align_subset, ref_chroms, target_chroms, threads_per_alignment, target_fasta, reference_fasta, minimap2_path, inter_files, map, genome_size)
-    for result in pool.imap_unordered(func, np.arange(0,len(ref_chroms))):
+    func = partial(align_subset, ref_chroms, target_chroms, threads_per_alignment, target_fasta, reference_fasta, minimap2_path, inter_files, map, genome_size, search_type)
+    for result in pool.imap_unordered(func, np.arange(0,len(target_chroms))):
         sam_files.append(result)
     pool.close()
     pool.join()
@@ -45,13 +45,17 @@ def split_target_sequence(target_chroms, target_fasta_name, inter_files):
 
 
 
-def align_subset(ref_chroms, target_chroms, threads, target_fasta_name, reference_fasta_name, minimap2_path, inter_files, map, genome_size, index):
-    if ref_chroms[index] == reference_fasta_name:
+def align_subset(ref_chroms, target_chroms, threads, target_fasta_name, reference_fasta_name, minimap2_path, inter_files, map, genome_size, liftover_type, index):
+    if ref_chroms[index] == reference_fasta_name and (liftover_type == "chrm_by_chrm" or liftover_type == "copies"):
         features_name = 'reference_all'
+    elif liftover_type == "unmapped":
+        features_name = "unmapped_to_expected_chrom"
+    elif liftover_type == "unplaced":
+        features_name = "unplaced"
     else:
         features_name = ref_chroms[index]
     features_file =  inter_files+ "/" + features_name + "_genes.fa"
-    if target_chroms[index] == target_fasta_name:
+    if liftover_type != "chrm_by_chrm" or target_chroms[0] == target_fasta_name:
         target_file = target_fasta_name
         out_file_target = "target_all"
     else:

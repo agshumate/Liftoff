@@ -6,13 +6,13 @@ import liftoff_utils
 import os
 
 
-def extract_features_to_lift(g_arg, db_arg, ref_chroms, reference_fasta, processes, infer_transcripts, infer_genes, inter_files):
+def extract_features_to_lift(g_arg, db_arg, ref_chroms, reference_fasta, processes, infer_transcripts, infer_genes, inter_files, liftover_type):
     print("extracting features")
     if os.path.exists(inter_files) is False:
         os.mkdir(inter_files)
     feature_db, feature_db_name = create_feature_db_connections(g_arg, db_arg, infer_transcripts, infer_genes)
     parent_dict, child_dict, intermediate_dict, parent_order= seperate_parents_and_children(feature_db)
-    get_gene_sequences(parent_dict, ref_chroms, reference_fasta, processes, inter_files)
+    get_gene_sequences(parent_dict, ref_chroms, reference_fasta, processes, inter_files, liftover_type)
     return parent_dict, child_dict, intermediate_dict, feature_db, parent_order
 
 
@@ -107,10 +107,10 @@ def has_child(feature, feature_db):
 
 
 
-def get_gene_sequences(parent_dict, ref_chroms, reference_fasta_name, processes, inter_files):
+def get_gene_sequences(parent_dict, ref_chroms, reference_fasta_name, processes, inter_files, liftover_type):
     pool = Pool(processes)
     Faidx(reference_fasta_name)
-    func = partial(get_gene_sequences_subset, parent_dict, reference_fasta_name, inter_files)
+    func = partial(get_gene_sequences_subset, parent_dict, reference_fasta_name, inter_files, liftover_type)
     for result in pool.imap_unordered(func, ref_chroms):
         continue
     pool.close()
@@ -118,10 +118,14 @@ def get_gene_sequences(parent_dict, ref_chroms, reference_fasta_name, processes,
     return
 
 
-def get_gene_sequences_subset(parent_dict, reference_fasta_name,  inter_files, chrom_name):
+def get_gene_sequences_subset(parent_dict, reference_fasta_name,  inter_files, liftover_type, chrom_name):
     reference_fasta = Fasta(reference_fasta_name)
-    if chrom_name  == reference_fasta_name:
+    if chrom_name  == reference_fasta_name and (liftover_type == "chrm_by_chrm" or liftover_type == "copies"):
         fasta_out_name = "reference_all"
+    elif liftover_type == "unmapped":
+        fasta_out_name = "unmapped_to_expected_chrom"
+    elif liftover_type == "unplaced":
+        fasta_out_name = "unplaced"
     else:
         fasta_out_name = chrom_name
     fasta_out = open(inter_files+"/"+fasta_out_name + "_genes.fa", 'w')
