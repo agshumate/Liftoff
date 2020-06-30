@@ -110,6 +110,8 @@ def has_child(feature, feature_db):
 def get_gene_sequences(parent_dict, ref_chroms, reference_fasta_name, processes, inter_files, liftover_type):
     pool = Pool(processes)
     Faidx(reference_fasta_name)
+    if liftover_type == "unplaced":
+        open(inter_files+"/unplaced_genes.fa", 'w')
     func = partial(get_gene_sequences_subset, parent_dict, reference_fasta_name, inter_files, liftover_type)
     for result in pool.imap_unordered(func, ref_chroms):
         continue
@@ -128,7 +130,10 @@ def get_gene_sequences_subset(parent_dict, reference_fasta_name,  inter_files, l
         fasta_out_name = "unplaced"
     else:
         fasta_out_name = chrom_name
-    fasta_out = open(inter_files+"/"+fasta_out_name + "_genes.fa", 'w')
+    if liftover_type == "unplaced":
+        fasta_out = open(inter_files+"/"+fasta_out_name + "_genes.fa", 'a')
+    else:
+        fasta_out = open(inter_files+"/"+fasta_out_name + "_genes.fa", 'w')
     sorted_parents = sorted(list(parent_dict.values()), key=lambda x: x.seqid)
     if chrom_name == reference_fasta_name:
         current_chrom = sorted_parents[0].seqid
