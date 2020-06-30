@@ -1,8 +1,4 @@
-import  merge_lifted_features
-import find_best_mapping
-import liftoff_utils
-
-
+from liftoff import find_best_mapping, liftoff_utils, merge_lifted_features
 
 
 def lift_all_features(alns, all_overlapping_features, threshold,  feature_db, parent_dict, children_dict,
