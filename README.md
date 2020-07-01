@@ -29,12 +29,12 @@ git clone https://github.com/agshumate/Liftoff liftoff
 
 ```
 cd liftoff
-python setup.py install
+python setup.py develop
 ```
 
 ### USAGE
 ```
-usage: liftoff.py [-h] -t <target.fasta> -r <reference.fasta>
+usage: liftoff [-h] -t <target.fasta> -r <reference.fasta>
                   [-g <ref_annotation.gff>] [-chroms <chroms.txt>] [-p 1]
                   [-o <output.gff>] [-db DB] [-infer_transcripts]
                   [-u <unmapped_features.txt>] [-infer_genes] [-a 0.5]
