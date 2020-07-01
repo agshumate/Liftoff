@@ -1,8 +1,6 @@
 import networkx as nx
-import aligned_seg
+from liftoff import aligned_seg, liftoff_utils
 import numpy as np
-import gffutils
-import liftoff_utils
 import copy
 
 

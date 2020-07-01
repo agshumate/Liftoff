@@ -1,4 +1,5 @@
-import liftoff_utils
+from liftoff import liftoff_utils
+
 
 def write_line(line, out_file):
     line = delete_attributes(line)

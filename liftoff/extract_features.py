@@ -2,7 +2,7 @@ import gffutils
 from multiprocessing import Pool
 from pyfaidx import Fasta, Faidx
 from functools import partial
-import liftoff_utils
+from liftoff import liftoff_utils
 import os
 
 

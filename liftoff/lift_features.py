@@ -1,10 +1,4 @@
-import  merge_lifted_features
-import find_best_mapping
-import liftoff_utils
-import os
-import psutil
-
-
+from liftoff import find_best_mapping, liftoff_utils, merge_lifted_features
 
 
 
