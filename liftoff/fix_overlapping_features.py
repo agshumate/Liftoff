@@ -1,6 +1,6 @@
-import lift_features
+from liftoff import lift_features, liftoff_utils
 import numpy as np
-import liftoff_utils
+
 
 def fix_incorrectly_overlapping_features(all_lifted_features, features_to_check, parent_dict, all_aligned_segs,
                                          unmapped_features, threshold, intermediate_dict, children_dict, feature_db,

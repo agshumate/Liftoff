@@ -1,8 +1,4 @@
-import lift_features
-import fix_overlapping_features
-import extract_features
-import align_features
-import liftoff_utils
+from liftoff import fix_overlapping_features, lift_features, liftoff_utils, align_features, extract_features
 
 
 def lift_original_annotation(gff, target_fasta, reference_fasta, ref_chroms, target_chroms, processes, db,

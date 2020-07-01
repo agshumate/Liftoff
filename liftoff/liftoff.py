@@ -1,5 +1,4 @@
-import liftover_types
-import write_new_gff
+from liftoff import write_new_gff, liftover_types
 import argparse
 
 

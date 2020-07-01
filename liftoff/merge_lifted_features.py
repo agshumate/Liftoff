@@ -1,5 +1,4 @@
-import gffutils
-import liftoff_utils
+from liftoff import liftoff_utils
 import copy
 
 

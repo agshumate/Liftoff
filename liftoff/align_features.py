@@ -5,11 +5,7 @@ import numpy as np
 from pyfaidx import Fasta, Faidx
 import subprocess
 import pysam
-import liftoff_utils
-import aligned_seg
-import copy
-
-
+from liftoff import aligned_seg, liftoff_utils
 
 
 def align_features_to_target(ref_chroms, target_chroms, processes, target_fasta, parent_dict, children_dict,
