@@ -29,7 +29,7 @@ git clone https://github.com/agshumate/Liftoff liftoff
 
 ```
 cd liftoff
-python setup.py develop
+python setup.py install
 ```
 
 ### USAGE
