@@ -138,7 +138,7 @@ def convert_all_children_coords(shortest_path_nodes, children, parent, copy_tag)
         mismatches.update(mismatched_bases)
         if  lifted_start !=0:
             strand = get_strand(shortest_path_nodes[0], parent)
-            new_child= liftoff_utils.make_new_feature(copy.copy(child), min(lifted_start, lifted_end) + 1, max(lifted_start, lifted_end) + 1, strand, shortest_path_nodes[0].reference_name)
+            new_child= liftoff_utils.make_new_feature(copy.deepcopy(child), min(lifted_start, lifted_end) + 1, max(lifted_start, lifted_end) + 1, strand, shortest_path_nodes[0].reference_name)
             mapped_children[new_child.id] = new_child
     return mapped_children, len(aligned_bases)/len(total_bases), (len(aligned_bases)-len(mismatches))/len(total_bases)
 
