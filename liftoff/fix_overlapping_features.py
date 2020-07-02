@@ -110,7 +110,12 @@ def resolve_overlapping_homologues(all_aligned_segs, lifted_feature_list, featur
                                    threshold,  parent_dict, intermediate_dict, children_dict,
                                    feature_db,original_parent_order,seq_id_threshold):
     all_overlapping_features = {}
+    starting_remap_feature_num = len(features_to_remap)
+    iter = 0
     while len(features_to_remap) > 0:
+        iter +=1
+        if iter > 10* starting_remap_feature_num:
+            break
         features_to_check = {}
         aligned_segs_to_remap = {}
         for feature_to_remap in features_to_remap:
@@ -125,6 +130,9 @@ def resolve_overlapping_homologues(all_aligned_segs, lifted_feature_list, featur
             if feature_to_remap in lifted_feature_list:
                 features_to_check[feature_to_remap] = lifted_feature_list[feature_to_remap]
         features_to_remap = check_homologues(lifted_feature_list, features_to_check, parent_dict, original_parent_order)
+    for feature in features_to_remap:
+        unmapped_features.append(parent_dict[liftoff_utils.convert_id_to_original(feature)])
+        del lifted_feature_list[feature]
     return lifted_feature_list
 
 

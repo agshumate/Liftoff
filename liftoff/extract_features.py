@@ -6,12 +6,12 @@ from liftoff import liftoff_utils
 import os
 
 
-def extract_features_to_lift(g_arg, db_arg, ref_chroms, reference_fasta, processes, infer_transcripts, infer_genes, inter_files, liftover_type):
+def extract_features_to_lift(g_arg, db_arg, ref_chroms, reference_fasta, processes, infer_transcripts, infer_genes, inter_files, liftover_type, parent_types_to_lift):
     print("extracting features")
     if os.path.exists(inter_files) is False:
         os.mkdir(inter_files)
     feature_db, feature_db_name = create_feature_db_connections(g_arg, db_arg, infer_transcripts, infer_genes)
-    parent_dict, child_dict, intermediate_dict, parent_order= seperate_parents_and_children(feature_db)
+    parent_dict, child_dict, intermediate_dict, parent_order= seperate_parents_and_children(feature_db, parent_types_to_lift)
     get_gene_sequences(parent_dict, ref_chroms, reference_fasta, processes, inter_files, liftover_type)
     return parent_dict, child_dict, intermediate_dict, feature_db, parent_order
 
@@ -36,12 +36,13 @@ def create_feature_db_connections(g_arg, db_arg, infer_transcripts, infer_genes)
 
 
 
-def seperate_parents_and_children(feature_db):
+def seperate_parents_and_children(feature_db, parent_types_to_lift):
     parent_dict, child_dict, intermediate_dict = {} , {}, {}
     feature_types = feature_db.featuretypes()
     parent_types, child_types, intermediate_types = find_feature_type_order(feature_types, feature_db)
     feature_num = 0
-    for parent_type in parent_types:
+    filtered_parents = [parent for parent in parent_types if parent in parent_types_to_lift]
+    for parent_type in filtered_parents:
         for parent in feature_db.features_of_type(featuretype=parent_type):
             feature_num += 1
             parent_dict[parent.id] = parent
@@ -78,17 +79,16 @@ def add_parent_tag(feature, feature_db):
 def find_feature_type_order(feature_types, feature_db):
     parent_types, intermediate_types, child_types = [],[],[]
     for feature_type in feature_types:
-        if feature_type != "region":
-            for feature in feature_db.features_of_type(featuretype=feature_type):
-                is_child = has_child(feature, feature_db) is False
-                is_parent = has_parent(feature, feature_db) is False
-                if is_child:
-                    child_types.append(feature_type)
-                if is_parent:
-                    parent_types.append(feature_type)
-                if is_parent is False and is_child is False:
-                    intermediate_types.append(feature_type)
-                break
+        for feature in feature_db.features_of_type(featuretype=feature_type):
+            is_child = has_child(feature, feature_db) is False
+            is_parent = has_parent(feature, feature_db) is False
+            if is_child:
+                child_types.append(feature_type)
+            if is_parent:
+                parent_types.append(feature_type)
+            if is_parent is False and is_child is False:
+                intermediate_types.append(feature_type)
+            break
     return parent_types, child_types, intermediate_types
 
 

@@ -3,15 +3,15 @@ from liftoff import fix_overlapping_features, lift_features, liftoff_utils, alig
 
 def lift_original_annotation(gff, target_fasta, reference_fasta, ref_chroms, target_chroms, processes, db,
                              lifted_feature_list, unmapped_features, infer_transcripts, infer_genes, cov_threshold, seq_threshold,
-                             minimap2_path, inter_files):
+                             minimap2_path, inter_files, max_alns, parents_to_lift):
     liftover_type = "chrm_by_chrm"
     if target_chroms[0] == target_fasta:
         cov_threshold, seq_threshold = 0,0
     parent_dict, children_dict, intermediate_dict, feature_db, original_parent_order = extract_features.extract_features_to_lift(
-        gff, db, ref_chroms, reference_fasta, processes, infer_transcripts, infer_genes, inter_files, liftover_type)
+        gff, db, ref_chroms, reference_fasta, processes, infer_transcripts, infer_genes, inter_files, liftover_type, parents_to_lift)
     aligned_segments = align_features.align_features_to_target(ref_chroms, target_chroms, processes, target_fasta,
                                                                parent_dict, children_dict, liftover_type,
-                                                               unmapped_features, reference_fasta, minimap2_path, inter_files, True)
+                                                               unmapped_features, reference_fasta, minimap2_path, inter_files, True, max_alns)
 
     print("lifting features")
     lift_features.lift_all_features(aligned_segments, {}, cov_threshold, feature_db, parent_dict, children_dict,
@@ -25,7 +25,7 @@ def lift_original_annotation(gff, target_fasta, reference_fasta, ref_chroms, tar
 
 def map_unmapped_genes_agaisnt_all(unmapped_features, target_fasta, reference_fasta, ref_chroms, target_chroms,
                                        processes, lifted_feature_list, feature_db, parent_dict, intermediate_dict,
-                                       children_dict, parent_order,minimap2_path,inter_files):
+                                       children_dict, parent_order,minimap2_path,inter_files, max_alns):
     liftoff_utils.clear_scores(lifted_feature_list, parent_dict)
     unmapped_dict = {}
     liftover_type = "unmapped"
@@ -35,7 +35,7 @@ def map_unmapped_genes_agaisnt_all(unmapped_features, target_fasta, reference_fa
     unmapped_features = []
     aligned_segments=align_features.align_features_to_target(ref_chroms, target_chroms, processes, target_fasta,
                                                                unmapped_dict, children_dict, liftover_type, unmapped_features, reference_fasta,
-                                                             minimap2_path,inter_files, True)
+                                                             minimap2_path,inter_files, True, max_alns)
     print("lifting features")
     lift_features.lift_all_features(aligned_segments, {}, 0.0, feature_db, unmapped_dict, children_dict,
                                     intermediate_dict, unmapped_features, lifted_feature_list, 0.0)
@@ -48,7 +48,7 @@ def map_unmapped_genes_agaisnt_all(unmapped_features, target_fasta, reference_fa
 
 def map_unplaced_genes(unmapped_features, target_fasta, reference_fasta, ref_chroms, target_chroms,
                                        processes, lifted_feature_list, feature_db, parent_dict, intermediate_dict,
-                                       children_dict, parent_order,minimap2_path,inter_files):
+                                       children_dict, parent_order,minimap2_path,inter_files, max_alns):
     liftoff_utils.clear_scores(lifted_feature_list, parent_dict)
     liftover_type = "unplaced"
     unplaced_dict = {}
@@ -59,7 +59,7 @@ def map_unplaced_genes(unmapped_features, target_fasta, reference_fasta, ref_chr
     extract_features.get_gene_sequences(unplaced_dict, ref_chroms, reference_fasta, processes, inter_files, liftover_type)
     aligned_segments=align_features.align_features_to_target(ref_chroms, target_chroms, processes, target_fasta,
                                                                unplaced_dict, children_dict, liftover_type, unmapped_features,
-                                                             reference_fasta,minimap2_path,inter_files, True)
+                                                             reference_fasta,minimap2_path,inter_files, True, max_alns)
     print("lifting features")
     lift_features.lift_all_features(aligned_segments, {}, 0.0, feature_db, unplaced_dict, children_dict,
                                     intermediate_dict, unmapped_features, lifted_feature_list, 0.0)
@@ -72,14 +72,14 @@ def map_unplaced_genes(unmapped_features, target_fasta, reference_fasta, ref_chr
 
 def map_extra_copies(target_fasta, reference_fasta, ref_chroms, target_chroms, processes,
                              lifted_feature_list, parent_dict, children_dict, feature_db, intermediate_dict, parent_order,
-                     seq_threshold,minimap2_path,inter_files, remap):
+                     seq_threshold,minimap2_path,inter_files, remap, max_alns):
     liftoff_utils.clear_scores(lifted_feature_list, parent_dict)
     unmapped_features = []
     liftover_type = "copies"
     extract_features.get_gene_sequences(parent_dict, ref_chroms, reference_fasta, processes, inter_files, liftover_type)
     aligned_segments=align_features.align_features_to_target(ref_chroms, target_chroms, processes, target_fasta,
                                                                parent_dict, children_dict, liftover_type, unmapped_features, reference_fasta,
-                                                             minimap2_path,inter_files, remap
+                                                             minimap2_path,inter_files, remap, max_alns
                                                              )
 
     print("lifting features")

@@ -18,14 +18,23 @@ def find_best_mapping(alignments, query_length,  parent, coords_to_exclude, chil
                                      weight=lambda u, v, d: get_weight(u, v, d, aln_graph))
     shortest_path_weight = nx.shortest_path_length(aln_graph, source=0, target=len(node_dict) - 1,
                                                    weight=lambda u, v, d: get_weight(u, v, d, aln_graph))
+
     shortest_path_nodes = []
     for i in range  (1,len(shortest_path)-1):
         node_name = shortest_path[i]
         shortest_path_nodes.append(node_dict[node_name])
     if len(shortest_path_nodes) == 0:
         return {}, shortest_path_weight, 0,0
+
     mapped_children, alignment_coverage, seq_id = convert_all_children_coords(shortest_path_nodes, children, parent, copy_tag)
     return mapped_children, shortest_path_weight, alignment_coverage, seq_id
+
+
+
+
+
+
+
 
 
 
@@ -112,6 +121,37 @@ def add_single_alignments(node_dict, aln_graph, alignments, children_coords, par
 
 
 
+def find_nearest_start_and_end(child_start, child_end, shortest_path_nodes, parent):
+    relative_coord1=liftoff_utils.get_relative_child_coord(parent, child_start, shortest_path_nodes[0].is_reverse)
+    relative_coord2=liftoff_utils.get_relative_child_coord(parent, child_end, shortest_path_nodes[0].is_reverse)
+    relative_start = min(relative_coord1, relative_coord2)
+    relative_end = max(relative_coord1, relative_coord2)
+    nearest_start, nearest_end = -1,-1
+    for node in shortest_path_nodes:
+        if relative_start <= node.query_block_end:
+            if relative_start >= node.query_block_start:
+                nearest_start = relative_start
+            else:
+                if node.query_block_start < relative_end:
+                    nearest_start=node.query_block_start
+            break
+    for i in range(len(shortest_path_nodes)):
+        node = shortest_path_nodes[i]
+        if relative_end <= node.query_block_end:
+
+            if relative_end >= node.query_block_start:
+                nearest_end = relative_end
+            else:
+                if i >0 and shortest_path_nodes[i-1].query_block_end > relative_start:
+                    nearest_end = shortest_path_nodes[i-1].query_block_end
+            break
+    if nearest_end == -1 and node.query_block_end < relative_end and node.query_block_end > relative_start:
+        nearest_end = node.query_block_end
+    return nearest_start, nearest_end
+
+
+
+
 
 
 def convert_all_children_coords(shortest_path_nodes, children, parent, copy_tag):
@@ -120,33 +160,25 @@ def convert_all_children_coords(shortest_path_nodes, children, parent, copy_tag)
     aligned_bases, total_bases, mismatches= set([]), set([]), set([])
     for child in children:
         child_start, child_end = child.start, child.end
-        lifted_feature = False
         total_bases.update(range(child_start, child_end + 1))
-        while lifted_feature is False:
-            lifted_start, lifted_end = convert_coord(child_start, child_end, parent, shortest_path_nodes)
-            if lifted_start !=0 and lifted_end !=0:
-                lifted_feature = True
-            else:
-                if lifted_start == 0:
-                    child_start += 1
-                if lifted_end == 0:
-                    child_end -= 1
-            if (child_start >= child_end and lifted_start ==0 and lifted_end ==0) :
-                lifted_feature = True
-        aligned_bases.update(range(child_start,child_end+1))
-        mismatched_bases = find_mismatched_bases(child_start, child_end, shortest_path_nodes, parent)
-        mismatches.update(mismatched_bases)
-        if  lifted_start !=0:
+        nearest_start_coord, nearest_end_coord = find_nearest_start_and_end(child_start, child_end, shortest_path_nodes, parent)
+        if nearest_start_coord != -1 and nearest_end_coord != -1:
+            lifted_start, lifted_end = convert_coord(nearest_start_coord, nearest_end_coord , parent, shortest_path_nodes)
+            aligned_bases.update(range(child_start,child_end+1))
+            mismatched_bases = find_mismatched_bases(child_start, child_end, shortest_path_nodes, parent)
+            mismatches.update(mismatched_bases)
             strand = get_strand(shortest_path_nodes[0], parent)
-            new_child= liftoff_utils.make_new_feature(copy.copy(child), min(lifted_start, lifted_end) + 1, max(lifted_start, lifted_end) + 1, strand, shortest_path_nodes[0].reference_name)
+            new_child= liftoff_utils.make_new_feature(copy.deepcopy(child), min(lifted_start, lifted_end) + 1, max(lifted_start, lifted_end) + 1, strand, shortest_path_nodes[0].reference_name)
             mapped_children[new_child.id] = new_child
     return mapped_children, len(aligned_bases)/len(total_bases), (len(aligned_bases)-len(mismatches))/len(total_bases)
 
 
 def find_mismatched_bases(start,end, shortest_path_nodes, parent):
     all_mismatches = []
-    relative_start=liftoff_utils.get_relative_child_coord(parent, start, shortest_path_nodes[0].is_reverse)
-    relative_end=liftoff_utils.get_relative_child_coord(parent, end, shortest_path_nodes[0].is_reverse)
+    relative_coord1=liftoff_utils.get_relative_child_coord(parent, start, shortest_path_nodes[0].is_reverse)
+    relative_coord2=liftoff_utils.get_relative_child_coord(parent, end, shortest_path_nodes[0].is_reverse)
+    relative_start = min(relative_coord1, relative_coord2)
+    relative_end = max(relative_coord1, relative_coord2)
     for node in shortest_path_nodes:
         node_mismatches = np.array(node.mismatches)
         mismatches = node_mismatches[np.where((node_mismatches >= relative_start) & (node_mismatches <= relative_end ))[0]]
@@ -167,11 +199,11 @@ def get_strand(aln, parent):
     return strand
 
 
-def convert_coord(coord_start, coord_end, parent, shortest_path_nodes):
+def convert_coord(relative_coord_start, relative_coord_end, parent, shortest_path_nodes):
     lifted_coords = []
-    for i in [coord_start, coord_end]:
+    for i in [relative_coord_start, relative_coord_end]:
         lifted_coord = 0
-        relative_coord = liftoff_utils.get_relative_child_coord(parent, i, shortest_path_nodes[0].is_reverse)
+        relative_coord = i
         for j in range (0,len(shortest_path_nodes)):
             if relative_coord >= shortest_path_nodes[j].query_block_start:
                 if relative_coord <= shortest_path_nodes[j].query_block_end:

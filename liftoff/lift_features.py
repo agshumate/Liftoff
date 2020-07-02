@@ -53,8 +53,6 @@ def lift_features_subset(all_overlapping_features, threshold, feature_order, par
                              intermediate_dict, previous_gene_start, unmapped_features, aligned_feature, seq_id_threshold):
     new_parent_name = aligned_feature[0].query_name
     original_parent_name = liftoff_utils.convert_id_to_original(new_parent_name)
-    process = psutil.Process(os.getpid())
-    #print(process.memory_info().rss/1000000000)
     copy_tag = liftoff_utils.get_copy_tag(new_parent_name)
     if new_parent_name in all_overlapping_features:
         overlapping_features = all_overlapping_features[new_parent_name]
