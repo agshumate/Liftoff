@@ -118,5 +118,5 @@ def parse_chrm_files(chroms_file):
     chroms.close()
     return ref_chroms, target_chroms
 
-
-main()
+if __name__ == "__main__":
+    main()
