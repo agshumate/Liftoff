@@ -125,11 +125,12 @@ def parse_chrm_files(chroms_file):
     return ref_chroms, target_chroms
 
 def get_parent_features_to_lift(feature_types_file):
-    if feature_types_file is None:
-        return ["gene"]
-    else:
+    feature_types = ["gene"]
+    if feature_types_file is not None:
         f= open(feature_types_file)
-        return [line.rstrip() for line in f.readlines()]
+        for line in f.readlines():
+            feature_types.append(line.rstrip())
+    return feature_types
 
 if __name__ == "__main__":
     main()
