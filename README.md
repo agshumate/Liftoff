@@ -34,17 +34,19 @@ python setup.py install
 
 ### USAGE
 ```
-usage: liftoff [-h] -t <target.fasta> -r <reference.fasta>
-                  [-g <ref_annotation.gff>] [-chroms <chroms.txt>] [-p 1]
-                  [-o <output.gff>] [-db DB] [-infer_transcripts]
-                  [-u <unmapped_features.txt>] [-infer_genes] [-a 0.5]
-                  [-s 0.5] [-unplaced <unplaced_seq_names.txt>] [-copies]
-                  [-sc 1.0] [-m PATH] [-dir <intermediate_files_dir>]
+usage: liftoff [-h] [-V] -t <target.fasta> -r <reference.fasta>
+               [-g <ref_annotation.gff>] [-chroms <chroms.txt>] [-p 1]
+               [-o <output.gff>] [-db DB] [-infer_transcripts]
+               [-u <unmapped_features.txt>] [-infer_genes] [-a 0.5] [-s 0.5]
+               [-unplaced <unplaced_seq_names.txt>] [-copies] [-sc 1.0]
+               [-m PATH] [-dir <intermediate_files_dir>] [-n 50]
+               [-f feature types]
 
 Lift features from one genome assembly to another
 
 optional arguments:
   -h, --help            show this help message and exit
+  -V, --version         show program version
   -t <target.fasta>     target fasta genome to lift genes to
   -r <reference.fasta>  reference fasta genome to lift genes from
   -g <ref_annotation.gff>
@@ -77,11 +79,17 @@ optional arguments:
   -dir <intermediate_files_dir>
                         name of directory to save intermediate fasta and SAM
                         files
+  -n 50                 max number of Minimap2 alignments to consider for each
+                        feature
+  -f feature types      list of parent feature types to lift-over
  
 ```
 The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation or feature database. If an annotation file is provided with the -g argument, a feature database will be built automatically and can be used for future lift overs by providing the -db argument. 
 
-By default, a gene (or other parent feature) will only be considered mapped successfully if the alignment coverage and sequence identity in the chlild features (usually exons/CDS) is > 50%. The alignment coverage threshold can be changed with the -a option. Any genes mapping with a coverage below the threshold will be present in the GFF file with the tag partial_mapping=True. The sequence identity threshold can be changed with the -s option. Any genes mapping with a lower sequence identity will be present in the GFF file with the tag low_identity=True. 
+By default, genes features and all child features of genes (i.e. trancripts, mRNA, exons, CDS, UTRs) will be lifted over. The -f parameter can be used to provide a list of additional parent feature types you wish to lift-over. 
+
+
+A gene will only be considered mapped successfully if the alignment coverage and sequence identity in the chlild features (usually exons/CDS) is > 50%. The alignment coverage threshold can be changed with the -a option. Any genes mapping with a coverage below the threshold will be present in the GFF file with the tag partial_mapping=True. The sequence identity threshold can be changed with the -s option. Any genes mapping with a lower sequence identity will be present in the GFF file with the tag low_identity=True. 
 
 Extra gene copies will have the same ID as the reference gene and will be tagged with extra_copy_number={copy_number}
 
