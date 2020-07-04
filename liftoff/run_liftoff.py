@@ -6,7 +6,7 @@ import argparse
 def parse_args():
     parser = argparse.ArgumentParser(description='Lift features from one genome assembly to another')
     group = parser.add_mutually_exclusive_group(required=True)
-    parser.add_argument("-V", "--version", help="show program version", action='version', version="v1.2.0" )
+    parser.add_argument("-V", "--version", help="show program version", action='version', version="v1.2.1" )
     parser.add_argument('-t', required=True, help="target fasta genome to lift genes to", metavar="<target.fasta>")
     parser.add_argument('-r', required=True, help = "reference fasta genome to lift genes from", metavar="<reference.fasta>")
     group.add_argument('-g', help="annotation file to lift over in gff or gtf format", metavar="<ref_annotation.gff>")
@@ -81,7 +81,7 @@ def main():
     unmapped_features, infer_transcripts, infer_genes, cov_threshold, seq_threshold, minimap2_path, inter_files, max_alns, parent_features_to_lift)
     unmapped_out = open(args.u, 'w')
     if len(unmapped_features) > 0 and target_chroms[0] != target_fasta:
-       print("mapping unaligned features to whole genome")
+       print("mapping unaligned features to whole genome2")
        ref_chroms = [reference_fasta]
        target_chroms = [target_fasta]
        unmapped_features = liftover_types.map_unmapped_genes_agaisnt_all(unmapped_features, target_fasta,
