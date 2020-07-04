@@ -109,19 +109,19 @@ def has_child(feature, feature_db):
 
 def get_gene_sequences(parent_dict, ref_chroms, reference_fasta_name, processes, inter_files, liftover_type):
     pool = Pool(processes)
-    Faidx(reference_fasta_name)
+    fai = Fasta(reference_fasta_name)
     if liftover_type == "unplaced":
         open(inter_files+"/unplaced_genes.fa", 'w')
-    func = partial(get_gene_sequences_subset, parent_dict, reference_fasta_name, inter_files, liftover_type)
-    for result in pool.imap_unordered(func, ref_chroms):
-        continue
+    #func = partial(get_gene_sequences_subset, parent_dict, reference_fasta_name, inter_files, liftover_type, fai)
+    for chrom in ref_chroms:
+        get_gene_sequences_subset(parent_dict, reference_fasta_name, inter_files, liftover_type, fai, chrom)
     pool.close()
     pool.join()
     return
 
 
-def get_gene_sequences_subset(parent_dict, reference_fasta_name,  inter_files, liftover_type, chrom_name):
-    reference_fasta = Fasta(reference_fasta_name)
+def get_gene_sequences_subset(parent_dict, reference_fasta_name,  inter_files, liftover_type, reference_fasta, chrom_name):
+
     if chrom_name  == reference_fasta_name and (liftover_type == "chrm_by_chrm" or liftover_type == "copies"):
         fasta_out_name = "reference_all"
     elif liftover_type == "unmapped":

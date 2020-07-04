@@ -49,6 +49,7 @@ def map_unmapped_genes_agaisnt_all(unmapped_features, target_fasta, reference_fa
 def map_unplaced_genes(unmapped_features, target_fasta, reference_fasta, ref_chroms, target_chroms,
                                        processes, lifted_feature_list, feature_db, parent_dict, intermediate_dict,
                                        children_dict, parent_order,minimap2_path,inter_files, max_alns):
+
     liftoff_utils.clear_scores(lifted_feature_list, parent_dict)
     liftover_type = "unplaced"
     unplaced_dict = {}

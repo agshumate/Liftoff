@@ -78,7 +78,7 @@ def align_subset(ref_chroms, target_chroms, threads, target_fasta_name, referenc
 
 def edit_name(search_type, ref_seq, name_dict):
     if search_type != "copies":
-        return ref_seq.query_name + "_1"
+        return ref_seq.query_name + "_0"
     else:
         if ref_seq.query_name not in name_dict:
             name_dict[ref_seq.query_name] = 0
