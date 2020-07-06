@@ -1,6 +1,7 @@
 from liftoff import fix_overlapping_features, lift_features, liftoff_utils, align_features, extract_features
 
 
+
 def lift_original_annotation(gff, target_fasta, reference_fasta, ref_chroms, target_chroms, processes, db,
                              lifted_feature_list, unmapped_features, infer_transcripts, infer_genes, cov_threshold, seq_threshold,
                              minimap2_path, inter_files, max_alns, parents_to_lift):
@@ -14,8 +15,10 @@ def lift_original_annotation(gff, target_fasta, reference_fasta, ref_chroms, tar
                                                                unmapped_features, reference_fasta, minimap2_path, inter_files, True, max_alns)
 
     print("lifting features")
+
     lift_features.lift_all_features(aligned_segments, {}, cov_threshold, feature_db, parent_dict, children_dict,
                                     intermediate_dict, unmapped_features, lifted_feature_list, seq_threshold)
+
     fix_overlapping_features.fix_incorrectly_overlapping_features(lifted_feature_list, lifted_feature_list, parent_dict,
                                                                   aligned_segments, unmapped_features,
                                                                   cov_threshold, intermediate_dict, children_dict,

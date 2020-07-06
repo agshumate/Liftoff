@@ -1,4 +1,4 @@
-from liftoff import liftoff_utils
+from liftoff import liftoff_utils, new_feature
 import copy
 
 
@@ -23,7 +23,7 @@ def merge_lifted_features(mapped_children, gene, unmapped_genes, threshold,
         child_feature = mapped_children[child_name]
         feature_list[child_feature.id]=child_feature
         if child_feature.id != gene.id:
-            orphans.append((child_feature, child_feature["Parent"][0]))
+            orphans.append((child_feature, child_feature.attributes["Parent"][0]))
         else:
             top_feature = child_feature
     while(len(orphans) != 0):
@@ -58,10 +58,12 @@ def create_parents(orphans, parent_dict, feature_list, intermediate_dict, gene):
                 original_parent = parent_dict[parent]
             else:
                 original_parent = intermediate_dict[parent]
-            parent_feature = liftoff_utils.make_new_feature(copy.deepcopy(original_parent), min(starts), max(ends), children[0].strand, children[0].seqid)
+            parent_feature = new_feature.new_feature(original_parent.id, original_parent.featuretype, children[0].seqid,
+                                                'Liftoff',children[0].strand, min(starts),max(ends), original_parent.attributes)
+            #parent_feature = liftoff_utils.make_new_feature(copy.deepcopy(original_parent), min(starts), max(ends), children[0].strand, children[0].seqid)
             feature_list[parent_feature.id] = parent_feature
             if parent_feature.id != gene.id:
-                new_orphans.append((parent_feature, parent_feature["Parent"][0]))
+                new_orphans.append((parent_feature, parent_feature.attributes["Parent"][0]))
             else:
                 top_feature = parent_feature
             added_parent_ids.append(parent)

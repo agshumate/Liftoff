@@ -1,14 +1,24 @@
 from liftoff import liftoff_utils
 
 
-def write_line(line, out_file):
-    line = delete_attributes(line)
+def write_line(feature, out_file):
+    feature = delete_attributes(feature)
     if out_file == "stdout":
-        print(line)
+        print(feature)
     else:
-        out_file.write(str(line)) 
+        line=make_gff_line(feature)
+        out_file.write(line)
         out_file.write("\n")
 
+def make_gff_line(feature):
+    attributes_str = ""
+    for attr in feature.attributes:
+        value_str = ""
+        for value in feature.attributes[attr]:
+            value_str += value + ","
+        attributes_str += (attr +"=" + value_str[:-1] + ";")
+    return feature.seqid + "\t" + feature.source + "\t" + feature.featuretype + "\t" + str(feature.start) + \
+           "\t" + str(feature.end) + "\t" + "." + "\t" + feature.strand + "\t" + "." + "\t" + attributes_str[:-1]
 
 
 def delete_attributes(line):
