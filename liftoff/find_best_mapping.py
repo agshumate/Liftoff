@@ -1,5 +1,5 @@
 import networkx as nx
-from liftoff import aligned_seg, liftoff_utils
+from liftoff import aligned_seg, liftoff_utils, new_feature
 import numpy as np
 import copy
 
@@ -104,7 +104,7 @@ def add_single_alignments(node_dict, aln_graph, alignments, children_coords, par
     head_nodes = []
     previous_node = 0
     for original_aln in alignments:
-        aln = trim_overlap_coords(copy.deepcopy(original_aln), coords_to_exclude, parent)
+        aln = trim_overlap_coords(copy.copy(original_aln), coords_to_exclude, parent)
         if aln.aln_id != previous_node_id:
             previous_node = 0
             previous_node_id = aln.aln_id
@@ -176,7 +176,9 @@ def convert_all_children_coords(shortest_path_nodes, children, parent, copy_tag)
             mismatched_bases = find_mismatched_bases(child_start, child_end, shortest_path_nodes, parent)
             mismatches.update(mismatched_bases)
             strand = get_strand(shortest_path_nodes[0], parent)
-            new_child= liftoff_utils.make_new_feature(copy.deepcopy(child), min(lifted_start, lifted_end) + 1, max(lifted_start, lifted_end) + 1, strand, shortest_path_nodes[0].reference_name)
+            new_child = new_feature.new_feature(child.id, child.featuretype, shortest_path_nodes[0].reference_name, 'Liftoff',
+                                                strand, min(lifted_start, lifted_end) + 1, max(lifted_start, lifted_end) + 1, child.attributes)
+            #new_child= liftoff_utils.make_new_feature(copy.copy(child), min(lifted_start, lifted_end) + 1, max(lifted_start, lifted_end) + 1, strand, shortest_path_nodes[0].reference_name)
             mapped_children[new_child.id] = new_child
     return mapped_children, len(aligned_bases)/len(total_bases), (len(aligned_bases)-len(mismatches))/len(total_bases)
 
