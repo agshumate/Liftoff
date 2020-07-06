@@ -1,7 +1,7 @@
 import networkx as nx
 from liftoff import aligned_seg, liftoff_utils, new_feature
 import numpy as np
-import copy
+
 
 
 
@@ -17,18 +17,17 @@ def find_best_mapping(alignments, query_length,  parent, coords_to_exclude, chil
     add_target_node(aln_graph, node_dict, query_length, children_coords, parent)
     shortest_path = nx.shortest_path(aln_graph, source=0, target=len(node_dict) - 1,
                                      weight=lambda u, v, d: get_weight(u, v, d, aln_graph))
-    shortest_path_weight = nx.shortest_path_length(aln_graph, source=0, target=len(node_dict) - 1,
-                                                   weight=lambda u, v, d: get_weight(u, v, d, aln_graph))
+
 
     shortest_path_nodes = []
     for i in range  (1,len(shortest_path)-1):
         node_name = shortest_path[i]
         shortest_path_nodes.append(node_dict[node_name])
     if len(shortest_path_nodes) == 0:
-        return {}, shortest_path_weight, 0,0
+        return {}, 0,0
 
     mapped_children, alignment_coverage, seq_id = convert_all_children_coords(shortest_path_nodes, children, parent, copy_tag)
-    return mapped_children, shortest_path_weight, alignment_coverage, seq_id
+    return mapped_children, alignment_coverage, seq_id
 
 
 
@@ -104,7 +103,7 @@ def add_single_alignments(node_dict, aln_graph, alignments, children_coords, par
     head_nodes = []
     previous_node = 0
     for original_aln in alignments:
-        aln = trim_overlap_coords(copy.copy(original_aln), coords_to_exclude, parent)
+        aln = trim_overlap_coords(original_aln, coords_to_exclude, parent)
         if aln.aln_id != previous_node_id:
             previous_node = 0
             previous_node_id = aln.aln_id
@@ -125,6 +124,7 @@ def add_single_alignments(node_dict, aln_graph, alignments, children_coords, par
             aln_graph.add_edge(previous_node, current_node, cost=edge_weight)
             previous_node = current_node
             node_num +=1
+
     return head_nodes
 
 
@@ -165,22 +165,24 @@ def find_nearest_start_and_end(child_start, child_end, shortest_path_nodes, pare
 def convert_all_children_coords(shortest_path_nodes, children, parent, copy_tag):
     shortest_path_nodes.sort(key=lambda x: x.query_block_start)
     mapped_children = {}
-    aligned_bases, total_bases, mismatches= set([]), set([]), set([])
+    aligned_bases, total_bases, mismatches= [], [], []
     for child in children:
         child_start, child_end = child.start, child.end
-        total_bases.update(range(child_start, child_end + 1))
+        total_bases.append(range(child_start, child_end + 1))
         nearest_start_coord, nearest_end_coord = find_nearest_start_and_end(child_start, child_end, shortest_path_nodes, parent)
         if nearest_start_coord != -1 and nearest_end_coord != -1:
             lifted_start, lifted_end = convert_coord(nearest_start_coord, nearest_end_coord , parent, shortest_path_nodes)
-            aligned_bases.update(range(child_start,child_end+1))
+            aligned_bases.append(range(child_start,child_end+1))
             mismatched_bases = find_mismatched_bases(child_start, child_end, shortest_path_nodes, parent)
-            mismatches.update(mismatched_bases)
+            mismatches.extend(mismatched_bases)
             strand = get_strand(shortest_path_nodes[0], parent)
             new_child = new_feature.new_feature(child.id, child.featuretype, shortest_path_nodes[0].reference_name, 'Liftoff',
-                                                strand, min(lifted_start, lifted_end) + 1, max(lifted_start, lifted_end) + 1, child.attributes)
-            #new_child= liftoff_utils.make_new_feature(copy.copy(child), min(lifted_start, lifted_end) + 1, max(lifted_start, lifted_end) + 1, strand, shortest_path_nodes[0].reference_name)
+                                                strand, min(lifted_start, lifted_end) + 1, max(lifted_start, lifted_end) + 1, dict(child.attributes))
             mapped_children[new_child.id] = new_child
-    return mapped_children, len(aligned_bases)/len(total_bases), (len(aligned_bases)-len(mismatches))/len(total_bases)
+    unique_aligned_bases = len(set(aligned_bases))
+    unique_total_bases = len(set(total_bases))
+    unique_mismatches = len(set(mismatches))
+    return mapped_children, unique_aligned_bases/unique_total_bases, (unique_aligned_bases-unique_mismatches)/unique_total_bases
 
 
 def find_mismatched_bases(start,end, shortest_path_nodes, parent):
@@ -322,8 +324,11 @@ def trim_overlap_coords(aln, coords_to_exclude, parent):
                 ref_start, ref_end = coords[1]+1, ref_end
     start_diff = ref_start - aln.reference_block_start
     end_diff = aln.reference_block_end - ref_end
-    aln.reference_block_start = ref_start
-    aln.reference_block_end = ref_end
-    aln.query_block_start += start_diff
-    aln.query_block_end -= end_diff
-    return aln
+    if ref_start != aln.reference_block_start or ref_end != aln.reference_block_end:
+        new_query_start = aln.query_block_start + start_diff
+        new_query_end = aln.query_block_end - end_diff
+        new_aln = aligned_seg.aligned_seg(aln.aln_id, aln.query_name, aln.reference_name,new_query_start, new_query_end, ref_start, ref_end, aln.is_reverse, aln.mismatches)
+
+    else:
+        new_aln = aln
+    return new_aln

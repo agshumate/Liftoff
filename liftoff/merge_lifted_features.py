@@ -36,9 +36,9 @@ def merge_lifted_features(mapped_children, gene, unmapped_genes, threshold,
         unmapped_genes.append(gene)
     else:
         top_feature.score = 1- seq_id
-        top_feature.attributes["copy_id"] = gene_name
-        top_feature.attributes["coverage"] = str(round(aln_cov,5))
-        top_feature.attributes["sequence_ID"] = str(round(seq_id,5))
+        top_feature.attributes["copy_id"] = [gene_name]
+        top_feature.attributes["coverage"] = [str(round(aln_cov,5))]
+        top_feature.attributes["sequence_ID"] = [str(round(seq_id,5))]
     return final_features, top_feature.start
 
 
@@ -59,8 +59,7 @@ def create_parents(orphans, parent_dict, feature_list, intermediate_dict, gene):
             else:
                 original_parent = intermediate_dict[parent]
             parent_feature = new_feature.new_feature(original_parent.id, original_parent.featuretype, children[0].seqid,
-                                                'Liftoff',children[0].strand, min(starts),max(ends), original_parent.attributes)
-            #parent_feature = liftoff_utils.make_new_feature(copy.deepcopy(original_parent), min(starts), max(ends), children[0].strand, children[0].seqid)
+                                                'Liftoff',children[0].strand, min(starts),max(ends), dict(original_parent.attributes))
             feature_list[parent_feature.id] = parent_feature
             if parent_feature.id != gene.id:
                 new_orphans.append((parent_feature, parent_feature.attributes["Parent"][0]))

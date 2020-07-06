@@ -1,13 +1,11 @@
 from liftoff import find_best_mapping, liftoff_utils, merge_lifted_features
-import cProfile
-import pstats
+
 
 
 
 def lift_all_features(alns, all_overlapping_features, threshold,  feature_db, parent_dict, children_dict,
                       intermediate_dict, unmapped_features, lifted_feature_list, seq_id_threshold):
-    profile = cProfile.Profile()
-    profile.enable()
+
     feature_order = get_feature_order(feature_db)
     previous_gene_start = 0
     alignments = sort_alignments(parent_dict, alns)
@@ -18,10 +16,7 @@ def lift_all_features(alns, all_overlapping_features, threshold,  feature_db, pa
                                                                                  previous_gene_start, unmapped_features,
                                                                            alignment, seq_id_threshold)
         lifted_feature_list[parent_name]=lifted_features
-    profile.disable()
-    ps = pstats.Stats(profile)
-    ps.sort_stats('cumtime')
-    #ps.print_stats()
+
 
 
 
@@ -68,7 +63,7 @@ def lift_features_subset(all_overlapping_features, threshold, feature_order, par
         overlapping_features = []
     parent = parent_dict[original_parent_name]
     if len(aligned_feature) > 0:
-        lifted_children, shortest_path_weight, alignment_coverage, seq_id = find_best_mapping.find_best_mapping(aligned_feature,
+        lifted_children, alignment_coverage, seq_id = find_best_mapping.find_best_mapping(aligned_feature,
                                                                                     parent.end - parent.start + 1,
                                                                                     parent, overlapping_features,
                                                                                     children_dict, previous_gene_start, copy_tag)
