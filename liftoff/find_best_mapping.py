@@ -1,7 +1,7 @@
 import networkx as nx
 from liftoff import aligned_seg, liftoff_utils, new_feature
 import numpy as np
-
+import copy
 
 
 
@@ -67,7 +67,7 @@ def chain_alignments(head_nodes, node_dict, aln_graph, coords_to_exclude, parent
 
 
 def add_edges(head_node_name, node_dict, aln_graph, coords_to_exclude, parent, children_coords, potential_edges):
-    for node_name in potential_edges:
+    for node_name in node_dict:
         from_node = node_dict[node_name]
         if is_valid_edge(node_dict[node_name], node_dict[head_node_name], coords_to_exclude, parent):
             edge_weight = get_edge_weight(from_node, node_dict[head_node_name], children_coords, parent)
@@ -103,7 +103,7 @@ def add_single_alignments(node_dict, aln_graph, alignments, children_coords, par
     head_nodes = []
     previous_node = 0
     for original_aln in alignments:
-        aln = trim_overlap_coords(original_aln, coords_to_exclude, parent)
+        aln = trim_overlap_coords(copy.copy(original_aln), coords_to_exclude, parent)
         if aln.aln_id != previous_node_id:
             previous_node = 0
             previous_node_id = aln.aln_id
@@ -324,11 +324,17 @@ def trim_overlap_coords(aln, coords_to_exclude, parent):
                 ref_start, ref_end = coords[1]+1, ref_end
     start_diff = ref_start - aln.reference_block_start
     end_diff = aln.reference_block_end - ref_end
-    if ref_start != aln.reference_block_start or ref_end != aln.reference_block_end:
-        new_query_start = aln.query_block_start + start_diff
-        new_query_end = aln.query_block_end - end_diff
-        new_aln = aligned_seg.aligned_seg(aln.aln_id, aln.query_name, aln.reference_name,new_query_start, new_query_end, ref_start, ref_end, aln.is_reverse, aln.mismatches)
-
-    else:
-        new_aln = aln
-    return new_aln
+    start_diff = ref_start - aln.reference_block_start
+    end_diff = aln.reference_block_end - ref_end
+    aln.reference_block_start = ref_start
+    aln.reference_block_end = ref_end
+    aln.query_block_start += start_diff
+    aln.query_block_end -= end_diff
+    # if ref_start != aln.reference_block_start or ref_end != aln.reference_block_end:
+    #     new_query_start = aln.query_block_start + start_diff
+    #     new_query_end = aln.query_block_end - end_diff
+    #     new_aln = aligned_seg.aligned_seg(aln.aln_id, aln.query_name, aln.reference_name,new_query_start, new_query_end, ref_start, ref_end, aln.is_reverse, aln.mismatches)
+    #
+    # else:
+    #     new_aln = aln
+    return aln
