@@ -10,9 +10,10 @@ def find_best_mapping(alignments, query_length,  parent, coords_to_exclude, chil
     children = children_dict[parent.id]
     children_coords = liftoff_utils.merge_children_intervals(children)
     node_dict, aln_graph = intialize_graph()
+    chrm_strand_dict ={}
     head_nodes = add_single_alignments(node_dict, aln_graph, alignments, children_coords, parent, coords_to_exclude,
-                                       previous_gene_start)
-    chain_alignments(head_nodes, node_dict, aln_graph, coords_to_exclude, parent, children_coords)
+                                       previous_gene_start, chrm_strand_dict)
+    chain_alignments(head_nodes, node_dict, aln_graph, coords_to_exclude, parent, children_coords, chrm_strand_dict)
     add_target_node(aln_graph, node_dict, query_length, children_coords, parent)
     shortest_path = nx.shortest_path(aln_graph, source=0, target=len(node_dict) - 1,
                                      weight=lambda u, v, d: get_weight(u, v, d, aln_graph))
@@ -59,13 +60,15 @@ def is_terminal_node(node, aln_graph):
 
 
 
-def chain_alignments(head_nodes, node_dict, aln_graph, coords_to_exclude, parent, children_coords):
+def chain_alignments(head_nodes, node_dict, aln_graph, coords_to_exclude, parent, children_coords, chrm_strand_dict):
     for node_name in head_nodes:
-        add_edges(node_name, node_dict, aln_graph, coords_to_exclude, parent, children_coords)
+        node = node_dict[node_name]
+        potential_edges = chrm_strand_dict[node.reference_name+str(node.is_reverse)]
+        add_edges(node_name, node_dict, aln_graph, coords_to_exclude, parent, children_coords, potential_edges)
 
 
-def add_edges(head_node_name, node_dict, aln_graph, coords_to_exclude, parent, children_coords):
-    for node_name in node_dict:
+def add_edges(head_node_name, node_dict, aln_graph, coords_to_exclude, parent, children_coords, potential_edges):
+    for node_name in potential_edges:
         from_node = node_dict[node_name]
         if is_valid_edge(node_dict[node_name], node_dict[head_node_name], coords_to_exclude, parent):
             edge_weight = get_edge_weight(from_node, node_dict[head_node_name], children_coords, parent)
@@ -94,7 +97,7 @@ def is_valid_alignment(previous_node, aln, coords_to_exclude, node_dict, parent)
     return True
 
 
-def add_single_alignments(node_dict, aln_graph, alignments, children_coords, parent, coords_to_exclude, previous_gene_start):
+def add_single_alignments(node_dict, aln_graph, alignments, children_coords, parent, coords_to_exclude, previous_gene_start, chrm_strand_dict):
     alignments=sort_alignments(previous_gene_start, alignments)
     node_num = 1
     previous_node_id = -1
@@ -112,6 +115,11 @@ def add_single_alignments(node_dict, aln_graph, alignments, children_coords, par
             node_dict[node_num]=aln
             current_node = node_num
             node_weight = get_node_weight(aln, children_coords, parent)
+            node_chrm_strand_key = aln.reference_name + str(aln.is_reverse)
+            if node_chrm_strand_key in chrm_strand_dict:
+                chrm_strand_dict[node_chrm_strand_key].append(current_node)
+            else:
+                chrm_strand_dict[node_chrm_strand_key]=[current_node]
             aln_graph.add_node(node_num, weight=node_weight)
             edge_weight = get_edge_weight(node_dict[previous_node], node_dict[current_node], children_coords, parent)
             aln_graph.add_edge(previous_node, current_node, cost=edge_weight)

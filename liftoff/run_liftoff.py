@@ -81,7 +81,7 @@ def main():
     unmapped_features, infer_transcripts, infer_genes, cov_threshold, seq_threshold, minimap2_path, inter_files, max_alns, parent_features_to_lift)
     unmapped_out = open(args.u, 'w')
     if len(unmapped_features) > 0 and target_chroms[0] != target_fasta:
-       print("mapping unaligned features to whole genome2")
+       print("mapping unaligned features to whole genome")
        ref_chroms = [reference_fasta]
        target_chroms = [target_fasta]
        unmapped_features = liftover_types.map_unmapped_genes_agaisnt_all(unmapped_features, target_fasta,
