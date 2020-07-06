@@ -7,7 +7,7 @@ def meets_length_threshold(feature, threshold, gene):
     original_length = original_feature.end - original_feature.start
     lifted_length = feature.end - feature.start
     coverage = lifted_length/float(original_length)
-    feature.attributes["coverage"] = coverage
+    feature.attributes["coverage"] = [coverage]
     return coverage >= threshold
 
 

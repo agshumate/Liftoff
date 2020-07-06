@@ -23,7 +23,7 @@ def make_gff_line(feature):
 
 def delete_attributes(line):
     if "coverage" in line.attributes:
-        line.attributes["coverage"] = str(line.attributes["coverage"][0])
+        line.attributes["coverage"] = [str(line.attributes["coverage"][0])]
     return line
 
 
@@ -44,6 +44,7 @@ def write_new_gff(lifted_features, out_file,  parent_dict, cov_threshold,seq_thr
             copy_num_dict[parent.id] =0
         copy_num=copy_num_dict[parent.id]
         parent.attributes["extra_copy_number"]=str(copy_num)
+        parent.attributes["copy_id"] = [parent.id + "_" + str(copy_num)]
         if float(parent.attributes["coverage"][0]) < cov_threshold:
             parent.attributes["partial_mapping"] = "True"
         if float(parent.attributes["sequence_ID"][0]) < seq_threshold:

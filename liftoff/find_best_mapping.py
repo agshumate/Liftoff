@@ -103,7 +103,7 @@ def add_single_alignments(node_dict, aln_graph, alignments, children_coords, par
     head_nodes = []
     previous_node = 0
     for original_aln in alignments:
-        aln = trim_overlap_coords(copy.copy(original_aln), coords_to_exclude, parent)
+        aln = trim_overlap_coords(original_aln, coords_to_exclude, parent)
         if aln.aln_id != previous_node_id:
             previous_node = 0
             previous_node_id = aln.aln_id
@@ -168,11 +168,11 @@ def convert_all_children_coords(shortest_path_nodes, children, parent, copy_tag)
     aligned_bases, total_bases, mismatches= [], [], []
     for child in children:
         child_start, child_end = child.start, child.end
-        total_bases.append(range(child_start, child_end + 1))
+        total_bases.extend(list(range(child_start, child_end + 1)))
         nearest_start_coord, nearest_end_coord = find_nearest_start_and_end(child_start, child_end, shortest_path_nodes, parent)
         if nearest_start_coord != -1 and nearest_end_coord != -1:
             lifted_start, lifted_end = convert_coord(nearest_start_coord, nearest_end_coord , parent, shortest_path_nodes)
-            aligned_bases.append(range(child_start,child_end+1))
+            aligned_bases.extend(list(range(child_start,child_end+1)))
             mismatched_bases = find_mismatched_bases(child_start, child_end, shortest_path_nodes, parent)
             mismatches.extend(mismatched_bases)
             strand = get_strand(shortest_path_nodes[0], parent)
@@ -324,17 +324,11 @@ def trim_overlap_coords(aln, coords_to_exclude, parent):
                 ref_start, ref_end = coords[1]+1, ref_end
     start_diff = ref_start - aln.reference_block_start
     end_diff = aln.reference_block_end - ref_end
-    start_diff = ref_start - aln.reference_block_start
-    end_diff = aln.reference_block_end - ref_end
-    aln.reference_block_start = ref_start
-    aln.reference_block_end = ref_end
-    aln.query_block_start += start_diff
-    aln.query_block_end -= end_diff
-    # if ref_start != aln.reference_block_start or ref_end != aln.reference_block_end:
-    #     new_query_start = aln.query_block_start + start_diff
-    #     new_query_end = aln.query_block_end - end_diff
-    #     new_aln = aligned_seg.aligned_seg(aln.aln_id, aln.query_name, aln.reference_name,new_query_start, new_query_end, ref_start, ref_end, aln.is_reverse, aln.mismatches)
-    #
-    # else:
-    #     new_aln = aln
-    return aln
+    if ref_start != aln.reference_block_start or ref_end != aln.reference_block_end:
+        new_query_start = aln.query_block_start + start_diff
+        new_query_end = aln.query_block_end - end_diff
+        new_aln = aligned_seg.aligned_seg(aln.aln_id, aln.query_name, aln.reference_name,new_query_start, new_query_end, ref_start, ref_end, aln.is_reverse, aln.mismatches)
+
+    else:
+        new_aln = aln
+    return new_aln

@@ -113,7 +113,6 @@ def resolve_overlapping_homologues(all_aligned_segs, lifted_feature_list, featur
     starting_remap_feature_num = len(features_to_remap)
     iter = 0
     while len(features_to_remap) > 0:
-        print(len(features_to_remap))
         iter +=1
         if iter > 10* starting_remap_feature_num:
             break
