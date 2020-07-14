@@ -11,14 +11,6 @@ def fix_incorrectly_overlapping_features(all_lifted_features, features_to_check,
     resolve_overlapping_homologues(all_aligned_segs, all_lifted_features, features_to_remap, unmapped_features,
                                    threshold, feature_hierarchy, feature_db, ref_parent_order, seq_id_threshold)
 
-    # all_feature_list = liftoff_utils.get_parent_list(all_lifted_features, parent_dict)
-    # inter = build_interval_list(all_feature_list)
-    # for feature in all_feature_list:
-    #     overlaps = find_overlaps(feature.start, feature.end, feature.seqid, feature.strand, feature.attributes[
-    #     "copy_id"][0], inter)
-    #     for overlap in overlaps:
-    #         if overlaps_in_ref_annotation(parent_dict[overlap[2][1].id], parent_dict[feature.id]) is False:
-    #             print(overlap, feature.id)
 
 
 
@@ -152,7 +144,6 @@ def resolve_overlapping_homologues(all_aligned_segs, lifted_feature_list, featur
     iter = 0
     max_iter = 10 * len(features_to_remap)
     while len(features_to_remap) > 0:
-        print(len(features_to_remap))
         iter += 1
         if iter > max_iter:
             break

@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
 	name="Liftoff",
-	version="1.2.2",
+	version="1.2.3",
 	author="Alaina Shumate",
 	author_email="ashumat2@jhmi.edu",
 	description="A gene annotation mapping tool",

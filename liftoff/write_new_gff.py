@@ -65,10 +65,10 @@ def write_feature(children, outfile, child_features, parent_dict):
 
 
 def write_line(feature, out_file):
+    line = make_gff_line(feature)
     if out_file == "stdout":
-        print(feature)
+        print(line)
     else:
-        line = make_gff_line(feature)
         out_file.write(line)
         out_file.write("\n")
 
