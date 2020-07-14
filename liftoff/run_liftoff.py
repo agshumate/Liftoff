@@ -28,7 +28,7 @@ def main():
 def parse_args():
     parser = argparse.ArgumentParser(description='Lift features from one genome assembly to another')
     group = parser.add_mutually_exclusive_group(required=True)
-    parser.add_argument("-V", "--version", help="show program version", action='version', version="v1.2.2")
+    parser.add_argument("-V", "--version", help="show program version", action='version', version="v1.2.2" )
     parser.add_argument('-t', required=True, help="target fasta genome to lift genes to", metavar="<target.fasta>")
     parser.add_argument('-r', required=True, help="reference fasta genome to lift genes from",
                         metavar="<reference.fasta>")
