@@ -1,6 +1,7 @@
 from liftoff import liftoff_utils, new_feature
 
 
+
 def merge_lifted_features(mapped_children, parent, unmapped_features, aln_cov_threshold, copy_id, feature_order,
                           feature_hierarchy, aln_cov, seq_id, seq_id_threshold):
     feature_list, final_features = {}, []
@@ -74,6 +75,6 @@ def process_final_features_list(feature_list, top_target_feature, seq_id, seq_id
     else:
         top_target_feature.score = 1 - seq_id
         top_target_feature.attributes["copy_id"] = [copy_id]
-        top_target_feature.attributes["coverage"] = [str(round(aln_cov, 5))]
-        top_target_feature.attributes["sequence_ID"] = [str(round(seq_id, 5))]
+        top_target_feature.attributes["coverage"] = [str(aln_cov)[0:5]]
+        top_target_feature.attributes["sequence_ID"] = [str(seq_id)[0:5]]
     return final_features

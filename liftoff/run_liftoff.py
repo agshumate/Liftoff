@@ -28,7 +28,7 @@ def main():
 def parse_args():
     parser = argparse.ArgumentParser(description='Lift features from one genome assembly to another')
     group = parser.add_mutually_exclusive_group(required=True)
-    parser.add_argument("-V", "--version", help="show program version", action='version', version="v1.2.3")
+    parser.add_argument("-V", "--version", help="show program version", action='version', version="v1.3.0")
     parser.add_argument('-t', required=True, help="target fasta genome to lift genes to", metavar="<target.fasta>")
     parser.add_argument('-r', required=True, help="reference fasta genome to lift genes from",
                         metavar="<reference.fasta>")
@@ -69,6 +69,14 @@ def parse_args():
     parser.add_argument('-n', required=False, default=50, metavar=50,
                         help="max number of Minimap2 alignments to consider for each feature", type=int)
     parser.add_argument('-f', required=False, metavar="feature types", help="list of feature types to lift-over")
+    parser.add_argument('-d', required=False, metavar=2, default=2, help="distance scaling factor. Alignment nodes " \
+                                                                       "father apart "
+                                                              "than this in the target genome will not be connected in "
+                                                              "the graph", type=float)
+    parser.add_argument('-exclude_partial', default=False, action='store_true',
+                        help="write partial mappings below -s and -a threshold to unmapped_features.txt. If true "
+                             "partial/low sequence identity mappings will be included in the gff file with "
+                             "partial_mapaping=True, low_identity=True in comments")
     args = parser.parse_args()
     if (float(args.s) > float(args.sc)):
         parser.error("-sc must be greater than or equal to -s")
@@ -134,7 +142,6 @@ def map_extra_copies(args, lifted_feature_list, feature_hierarchy, feature_db, r
         target_chroms = [args.t]
         liftover_types.map_extra_copies(ref_chroms, target_chroms, lifted_feature_list, feature_hierarchy, feature_db,
                                         ref_parent_order, args)
-
 
 
 if __name__ == "__main__":

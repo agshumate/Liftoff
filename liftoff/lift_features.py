@@ -2,22 +2,22 @@ from liftoff import find_best_mapping, liftoff_utils, merge_lifted_features
 
 
 
-def lift_all_features(alns, all_overlapping_features, threshold, feature_db, features_to_lift, feature_hierarchy,
-                      unmapped_features, lifted_feature_list, seq_id_threshold):
+def lift_all_features(alns, threshold, feature_db, features_to_lift, feature_hierarchy,
+                      unmapped_features, lifted_feature_list, seq_id_threshold, feature_locations, distance_factor):
     feature_order = get_feature_order(feature_db)
     previous_gene_start = 0
     alignments = sort_alignments(features_to_lift, alns)
     num_features = 0
     for alignment in alignments:
         num_features += 1
-        # print(num_features)
-        lifted_features, parent_name, previous_gene_start = lift_single_feature(all_overlapping_features, threshold,
+        lifted_features, parent_name, previous_gene_start = lift_single_feature(threshold,
                                                                                 feature_order, features_to_lift,
                                                                                 feature_hierarchy,
                                                                                 previous_gene_start, unmapped_features,
-                                                                                alignment, seq_id_threshold)
-
-        lifted_feature_list[parent_name] = lifted_features
+                                                                                alignment, seq_id_threshold, feature_locations,
+                                                                                lifted_feature_list, distance_factor)
+        if lifted_features != []:
+            lifted_feature_list[parent_name] = lifted_features
 
 
 def get_feature_order(gene_db):
@@ -52,19 +52,21 @@ def sort_alignments(parent_dict, alignments):
     return values
 
 
-def lift_single_feature(all_overlapping_features, threshold, feature_order, features_to_lift, feature_hierarchy,
-                        previous_gene_start, unmapped_features, aligned_feature, seq_id_threshold):
+def lift_single_feature(threshold, feature_order, features_to_lift, feature_hierarchy,
+                        previous_gene_start, unmapped_features, aligned_feature, seq_id_threshold, feature_locations,
+                        lifted_features_list, distance_factor):
     new_parent_name = aligned_feature[0].query_name
     original_parent_name = liftoff_utils.convert_id_to_original(new_parent_name)
-    overlapping_features = get_overlapping_features_list(new_parent_name, all_overlapping_features)
     parent = features_to_lift[original_parent_name]
     if len(aligned_feature) > 0:
         lifted_children, alignment_coverage, seq_id = find_best_mapping.find_best_mapping(aligned_feature,
                                                                                           parent.end - parent.start + 1,
-                                                                                          parent, overlapping_features,
-                                                                                          feature_hierarchy.children,
-                                                                                          previous_gene_start)
-        lifted_feature_list, feature_start = merge_lifted_features.merge_lifted_features(lifted_children,
+                                                                                          parent,
+                                                                                          feature_hierarchy,
+                                                                                          previous_gene_start, feature_locations,
+                                                                                          lifted_features_list,
+                                                                                          distance_factor)
+        lifted_features, feature_start = merge_lifted_features.merge_lifted_features(lifted_children,
                                                                                          parent,
                                                                                          unmapped_features, threshold,
                                                                                          new_parent_name, feature_order,
@@ -74,12 +76,6 @@ def lift_single_feature(all_overlapping_features, threshold, feature_order, feat
     else:
         unmapped_features.append(parent)
         feature_start = 0
-    return lifted_feature_list, aligned_feature[0].query_name, feature_start
+    return lifted_features, aligned_feature[0].query_name, feature_start
 
 
-def get_overlapping_features_list(new_parent_name, all_overlapping_features):
-    if new_parent_name in all_overlapping_features:
-        overlapping_features = all_overlapping_features[new_parent_name]
-    else:
-        overlapping_features = []
-    return overlapping_features

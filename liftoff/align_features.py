@@ -214,10 +214,11 @@ def base_is_aligned(operation, cigar_operations):
 
 
 def add_aligned_base(operation, query_block_pos, reference_block_pos, length, cigar_operations, mismatches):
+    if operation == cigar_operations["mismatch"]:
+        for i in range(query_block_pos, query_block_pos + length):
+            mismatches.append(i)
     query_block_pos, reference_block_pos = adjust_position(operation, query_block_pos, reference_block_pos,
                                                            length)
-    if operation == cigar_operations["mismatch"]:
-        mismatches.append(query_block_pos)
     return query_block_pos, reference_block_pos
 
 

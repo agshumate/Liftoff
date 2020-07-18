@@ -1,4 +1,5 @@
 import numpy as np
+import interlap
 
 
 def count_overlap(start1, end1, start2, end2):
@@ -59,3 +60,41 @@ def get_copy_tag(id):
     copy_tag_len = len(id.split("_")[-1])
     copy_tag = id[-copy_tag_len-1:]
     return copy_tag
+
+
+def get_strand(aln, parent):
+    if aln.is_reverse:
+        if parent.strand == "-":
+            strand = '+'
+        else:
+            strand = "-"
+    else:
+        strand = parent.strand
+    return strand
+
+def find_overlaps(start, end, chrm, strand, feature_name, intervals, parent_dict, lifted_features_list):
+    all_overlaps = intervals.find((start, end))
+    incorrect_overlaps = []
+    filtered_overlaps = [overlap for overlap in all_overlaps if
+                         overlap[2][1].seqid == chrm and overlap[2][1].strand == strand and overlap[2][
+                             0] != feature_name]
+    for overlap in filtered_overlaps:
+        ref_feature = parent_dict[convert_id_to_original(feature_name)]
+        ref_overlap_feature = parent_dict[convert_id_to_original(overlap[2][0])]
+        if overlaps_in_ref_annotation(ref_feature, ref_overlap_feature) is False and overlap[2][0] in \
+                lifted_features_list:
+            incorrect_overlaps.append(overlap)
+    return incorrect_overlaps
+
+
+def overlaps_in_ref_annotation(ref_feature1, ref_feature2):
+    if ref_feature1.seqid != ref_feature2.seqid:
+        return False
+    if ref_feature1.strand != ref_feature2.strand:
+        return False
+    if ref_feature1.id == ref_feature2.id:
+        return False
+    else:
+        return count_overlap(ref_feature1.start, ref_feature1.end,
+                                           ref_feature2.start,
+                                           ref_feature2.end) > 0
