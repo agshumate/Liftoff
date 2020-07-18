@@ -37,9 +37,8 @@ usage: liftoff [-h] [-V] -t <target.fasta> -r <reference.fasta>
                [-g <ref_annotation.gff>] [-chroms <chroms.txt>] [-p 1]
                [-o <output.gff>] [-db DB] [-infer_transcripts]
                [-u <unmapped_features.txt>] [-infer_genes] [-a 0.5] [-s 0.5]
-               [-unplaced <unplaced_seq_names.txt>] [-copies] [-sc 1.0]
                [-m PATH] [-dir <intermediate_files_dir>] [-n 50]
-               [-f feature types]
+               [-f feature types] [-d 2] [-exclude_partial]
 
 Lift features from one genome assembly to another
 
@@ -80,7 +79,15 @@ optional arguments:
                         files
   -n 50                 max number of Minimap2 alignments to consider for each
                         feature
-  -f feature types      list of parent feature types to lift-over
+  -f feature types      list of feature types to lift-over
+  -d 2                  distance scaling factor. Alignment nodes father apart
+                        than this in the target genome will not be connected
+                        in the graph
+  -exclude_partial      write partial mappings below -s and -a threshold to
+                        unmapped_features.txt. If true partial/low sequence
+                        identity mappings will be included in the gff file
+                        with partial_mapaping=True, low_identity=True in
+                        comments
  
 ```
 The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation or feature database. If an annotation file is provided with the -g argument, a feature database will be built automatically and can be used for future lift overs by providing the -db argument. 
