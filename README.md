@@ -90,16 +90,17 @@ optional arguments:
                         comments
  
 ```
-The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation or feature database. If an annotation file is provided with the -g argument, a feature database will be built automatically and can be used for future lift overs by providing the -db argument. 
+### Input and Output
+The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation or feature database. If an annotation file is provided with the -g argument, a feature database will be built automatically and can be used for future lift overs by providing the -db argument. The output is a gff file for the target genome and a file with the IDs of unmapped genes. 
 
-By default, genes features and all child features of genes (i.e. trancripts, mRNA, exons, CDS, UTRs) will be lifted over. The -f parameter can be used to provide a list of additional parent feature types you wish to lift-over. Note: feature IDs must be unique for every feature and may not contain spaces
+### Feature Types
+By default, 'gene' features and all child features of genes (i.e. trancripts, mRNA, exons, CDS, UTRs) will be lifted over. The -f parameter can be used to provide a list of additional parent feature types you wish to lift-over. Note: feature IDs must be unique for every feature and may not contain spaces. 
 
+### Sequence Identity and Alignment Coverage
+A gene will be considered mapped successfully if the alignment coverage and sequence identity in the child features (usually exons/CDS) is >= 50%. This can be changed with the -a and -s options. By default, genes that map below these thresholds will be included in the gff file with partial_mapping=True and low_identity=True in the last column. To exclude these partial/low identity mappings from the final GFF use -exclude_partial, and these genes will instead be written to the unmapped_features.txt file. The sequence identity and alignment coverage is reported in the final column of the output GFF for feach gene. 
 
-A gene will only be considered mapped successfully if the alignment coverage and sequence identity in the chlild features (usually exons/CDS) is > 50%. The alignment coverage threshold can be changed with the -a option. Any genes mapping with a coverage below the threshold will be present in the GFF file with the tag partial_mapping=True. The sequence identity threshold can be changed with the -s option. Any genes mapping with a lower sequence identity will be present in the GFF file with the tag low_identity=True. 
-
-Extra gene copies will have the same ID as the reference gene and will be tagged with extra_copy_number={copy_number}
-
-For chromosome-scale assemblies of the same species, performing the lift over chromosome by chromosome is much faster. This is also strongly recommended for repetitive/polyploid genomes. This option can be enabled by providing a  comma seperated file chroms.txt with corresponding chromosome names with the -chroms argument. Each line of the file should follow {ref_chrom_name},{target_chrom_name} for each pair of corresponding chromosomes. For example, a lift over from a Genbank human assembly to a Refseq human assembly would have the following chroms.txt file. 
+### Chromosome by Chromosome Lift-over
+By default, all genes will be aligned to the entire target assembly. However, for chromosome-scale assemblies of the same species, the -chroms option can be used to perform the lift-over chromosome by chromosome which improves accuracy. After the chromosome by chromosome lift over is complete, any genes that did not map will be aligned to the whole genome. This is strongly recommended for repetitive/polyploid genomes where there are many similar genes on different chromosomes. This option can be enabled by providing a  comma seperated file chroms.txt with corresponding chromosome names with the -chroms argument. Each line of the file should follow {ref_chrom_name},{target_chrom_name} for each pair of corresponding chromosomes. For example, a lift over from a Genbank human assembly to a Refseq human assembly would have the following chroms.txt file. 
  ```
 chr1,NC_000001.10
 chr2,NC_000002.11
@@ -126,7 +127,13 @@ chr22,NC_000022.10
 chrX,NC_000023.10
 chrY,NC_000024.9
 ```
-After the chromosome by chromosome lift over is complete, any genes that did not map will be aligned to the whole genome. 
+
+#### Unplaced Genes
+A list of unplaced sequence names can be provided with the -unplaced option. With this option, genes from these unplaced contigs in the reference will be mapped to the target assembly after the genes on the main chromosomes in the chroms.txt have been mapped. 
+
+
+### Extra Gene Copies
+With the -copies option, Liftoff will look for extra copies of genes that are not annotated in the reference after the initial lift over. A gene copy will only be annonated at a locus if it does not overlap another annotated feature. By default, exons/CDS's must have 100% sequence identity Extra gene copies will have the same ID as the reference gene and will be tagged with extra_copy_number={copy_number} in the last column of the GFF file. 
 
 
 
