@@ -19,14 +19,13 @@ Add minimap2 is in your path after installation or use the -m argument when runn
 
 
 #### Step 2: 
-Then clone the workflow into a working directory 
+The easiest way to install Liftoff is with pip 
+```
+pip install Liftoff
+```
+Or you can install it from source with the following steps
 ```
 git clone https://github.com/agshumate/Liftoff liftoff 
-```
-
-#### Step 3:
-
-```
 cd liftoff
 python setup.py install
 ```
