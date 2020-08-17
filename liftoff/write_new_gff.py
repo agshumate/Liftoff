@@ -47,9 +47,9 @@ def add_attributes(parent, fragment_num, copy_num, args):
     parent.attributes["extra_copy_number"] = [str(copy_num)]
     parent.attributes["copy_num_ID"] = [parent.id + "_" + str(copy_num)]
     parent.attributes["fragment_number"] = [str(fragment_num)]
-    if float(parent.attributes["feature_coverage"][0]) < args.a:
+    if float(parent.attributes["coverage"][0]) < args.a:
         parent.attributes["partial_mapping"] = ["True"]
-    if float(parent.attributes["feature_sequence_ID"][0]) < args.s:
+    if float(parent.attributes["sequence_ID"][0]) < args.s:
         parent.attributes["low_identity"] = ["True"]
 
 

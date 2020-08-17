@@ -81,6 +81,6 @@ def process_final_features_list(feature_list, top_target_feature, seq_id, seq_id
         top_target_feature.attributes["fragment_coverage"] = [str(aln_cov)[0:5]]
         top_target_feature.attributes["fragment_sequence_ID"] = [str(seq_id)[0:5]]
         top_target_feature.attributes["fragment_number"]=[str(frag_num +1)]
-        top_target_feature.attributes["feature_coverage"] = [str(total_coverage)[0:5]]
-        top_target_feature.attributes["feature_sequence_ID"] = [str(total_seq_id)[0:5]]
+        top_target_feature.attributes["coverage"] = [str(total_coverage)[0:5]]
+        top_target_feature.attributes["sequence_ID"] = [str(total_seq_id)[0:5]]
     return final_features
