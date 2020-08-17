@@ -184,8 +184,12 @@ def get_edge_weight(from_node, to_node, children_coords, parent):
     unaligned_range = [from_node.query_block_end + 1, to_node.query_block_start + node_overlap - 1]
     unaligned_exon_bases = 0
     for child_interval in children_coords:
-        relative_start = liftoff_utils.get_relative_child_coord(parent, child_interval[0], True)
-        relative_end = liftoff_utils.get_relative_child_coord(parent, child_interval[1], True)
+        if from_node.reference_name == "start":
+            is_reverse = to_node.is_reverse
+        else:
+            is_reverse = from_node.is_reverse
+        relative_start = liftoff_utils.get_relative_child_coord(parent, child_interval[0], is_reverse)
+        relative_end = liftoff_utils.get_relative_child_coord(parent, child_interval[1], is_reverse)
         child_start, child_end = min(relative_start, relative_end), max(relative_start, relative_end)
         overlap = liftoff_utils.count_overlap(child_start, child_end, min(unaligned_range[0], unaligned_range[1]), max(unaligned_range[0], unaligned_range[1]))
         if overlap==1 and unaligned_range[0] == unaligned_range[1]+1 and from_node.reference_name == \
@@ -300,6 +304,8 @@ def trim_path_boundaries(shortest_path_nodes):
         node_overlap = get_node_overlap(from_node, to_node)
         to_node.query_block_start += node_overlap
         to_node.reference_block_start += node_overlap
+
+
 
 
 def split_shortest_path_nodes(shortest_path_nodes):
