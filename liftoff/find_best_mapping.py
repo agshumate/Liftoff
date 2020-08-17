@@ -312,6 +312,8 @@ def trim_path_boundaries(shortest_path_nodes):
         from_node = shortest_path_nodes[i-1]
         to_node = shortest_path_nodes[i]
         node_overlap = get_node_overlap(from_node, to_node)
+        if node_overlap !=0:
+            print(node_overlap)
         to_node.query_block_start += node_overlap
         to_node.reference_block_start += node_overlap
 
