@@ -298,6 +298,7 @@ def get_weight(u, v, d, G):
 
 
 def trim_path_boundaries(shortest_path_nodes):
+
     for i in range(1, len(shortest_path_nodes)):
         from_node = shortest_path_nodes[i-1]
         to_node = shortest_path_nodes[i]
@@ -317,8 +318,8 @@ def split_shortest_path_nodes(shortest_path_nodes):
             if current_chrm_group != []:
                 nodes_by_chrm.append(current_chrm_group)
             current_chrm_group = []
-            current_chrm_group.append(node)
             current_chrm = node.reference_name
+        current_chrm_group.append(node)
     if current_chrm_group != []:
         nodes_by_chrm.append(current_chrm_group)
     return nodes_by_chrm
