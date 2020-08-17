@@ -25,6 +25,7 @@ def main():
     write_new_gff.write_new_gff(lifted_feature_list, feature_hierarchy.parents, args)
 
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Lift features from one genome assembly to another')
     group = parser.add_mutually_exclusive_group(required=True)
@@ -77,6 +78,13 @@ def parse_args():
                         help="write partial mappings below -s and -a threshold to unmapped_features.txt. If true "
                              "partial/low sequence identity mappings will be included in the gff file with "
                              "partial_mapaping=True, low_identity=True in comments")
+    parser.add_argument('-flank', default=0, metavar=0, type=float, help="amount of flanking sequence to align as a "
+                                                                         "percentage of gene length. This can improve"
+                                                                         " gene alignment where gene structure "
+                                                                         "differs between target and reference" )
+    parser.add_argument('-frag', default =False, action='store_true', help="allow genes to map across contigs for "
+                                                                           "fragmented assemblies")
+    parser.add_argument('-scaffold', default=False, action='store_true')
     args = parser.parse_args()
     if (float(args.s) > float(args.sc)):
         parser.error("-sc must be greater than or equal to -s")

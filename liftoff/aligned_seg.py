@@ -1,6 +1,6 @@
 class aligned_seg:
     def __init__(self, aln_id, query_name, reference_name, query_block_start, query_block_end, reference_block_start,
-                 reference_block_end, is_reverse, mismatches):
+                 reference_block_end, is_reverse, mismatches, full_length):
         self.aln_id = aln_id
         self.query_name = query_name
         self.reference_name = reference_name
@@ -10,3 +10,4 @@ class aligned_seg:
         self.reference_block_start = reference_block_start
         self.reference_block_end = reference_block_end
         self.mismatches = mismatches
+        self.full_length = full_length

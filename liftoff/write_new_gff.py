@@ -18,29 +18,38 @@ def write_new_gff(lifted_features, parents_dict, args):
 
 def finalize_parent_features(parents, args):
     final_parent_list = []
-    copy_num_dict = {}
+    copy_num_dict, fragment_num_dict = {}, {}
     for parent in parents:
         add_to_copy_num_dict(parent, copy_num_dict)
+        add_to_fragment_num_dict(parent, fragment_num_dict)
         copy_num = copy_num_dict[parent.id]
-        add_attributes(parent, copy_num, args)
+        fragment_num = fragment_num_dict[liftoff_utils.remove_frag_tag(parent.attributes["copy_id"][0])]
+        add_attributes(parent,fragment_num, copy_num, args)
         final_parent_list.append(parent)
     return final_parent_list
 
 
 def add_to_copy_num_dict(parent, copy_num_dict):
-    if parent.id in copy_num_dict:
+    if parent.id in copy_num_dict and parent.attributes["fragment_number"][0] == '1':
         copy_num_dict[parent.id] += 1
     else:
         copy_num_dict[parent.id] = 0
 
+def add_to_fragment_num_dict(parent, fragment_num_dict):
+    if liftoff_utils.remove_frag_tag(parent.attributes["copy_id"][0]) in fragment_num_dict:
+        fragment_num_dict[liftoff_utils.remove_frag_tag(parent.attributes["copy_id"][0])] += 1
+    else:
+        fragment_num_dict[liftoff_utils.remove_frag_tag(parent.attributes["copy_id"][0])] =1
 
-def add_attributes(parent, copy_num, args):
+
+def add_attributes(parent, fragment_num, copy_num, args):
     parent.score = "."
-    parent.attributes["extra_copy_number"] = str(copy_num)
+    parent.attributes["extra_copy_number"] = [str(copy_num)]
     parent.attributes["copy_num_ID"] = [parent.id + "_" + str(copy_num)]
-    if float(parent.attributes["coverage"][0]) < args.a:
+    parent.attributes["fragment_number"] = [str(fragment_num)]
+    if float(parent.attributes["feature_coverage"][0]) < args.a:
         parent.attributes["partial_mapping"] = ["True"]
-    if float(parent.attributes["sequence_ID"][0]) < args.s:
+    if float(parent.attributes["feature_sequence_ID"][0]) < args.s:
         parent.attributes["low_identity"] = ["True"]
 
 

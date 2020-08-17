@@ -51,9 +51,14 @@ def find_parent_order(parents):
 
 
 def convert_id_to_original(id):
-    copy_tag_len = len(id.split("_")[-1])
-    original_parent_name = id[:-copy_tag_len-1]
+    frag_split = id.split("_frag")[0]
+    copy_tag_len = len(frag_split.split("_")[-1])
+    original_parent_name = frag_split[:-copy_tag_len-1]
     return original_parent_name
+
+
+def remove_frag_tag(id):
+    return id.split("_frag")[0]
 
 
 def get_copy_tag(id):

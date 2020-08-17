@@ -3,7 +3,7 @@ from liftoff import liftoff_utils, new_feature
 
 
 def merge_lifted_features(mapped_children, parent, unmapped_features, aln_cov_threshold, copy_id, feature_order,
-                          feature_hierarchy, aln_cov, seq_id, seq_id_threshold):
+                          feature_hierarchy, aln_cov, seq_id, seq_id_threshold, frag_num, total_seq_id, total_coverage):
     feature_list, final_features = {}, []
     non_parents = []
     top_target_feature = None
@@ -19,9 +19,11 @@ def merge_lifted_features(mapped_children, parent, unmapped_features, aln_cov_th
             top_target_feature = child_feature
     while (len(non_parents) != 0):
         non_parents, top_target_feature = create_parents(non_parents, parent, feature_hierarchy, feature_list)
-    final_features = process_final_features_list(feature_list, top_target_feature, seq_id, seq_id_threshold, aln_cov,
+    final_features = process_final_features_list(feature_list, top_target_feature, seq_id, seq_id_threshold,
+                                                 aln_cov,
                                                  aln_cov_threshold,
-                                                 unmapped_features, parent, feature_order, copy_id)
+                                                 unmapped_features, parent, feature_order, copy_id, frag_num,
+                                                 total_seq_id, total_coverage)
     return final_features, top_target_feature.start
 
 
@@ -64,17 +66,21 @@ def get_ref_parent(parent, feature_hierarchy):
 
 
 def process_final_features_list(feature_list, top_target_feature, seq_id, seq_id_threshold, aln_cov, aln_cov_threshold,
-                                unmapped_features, parent, feature_order, copy_id):
+                                unmapped_features, parent, feature_order, copy_id, frag_num, total_seq_id,
+                                total_coverage):
     final_features = [feature for feature in feature_list.values() if feature != top_target_feature]
     final_features.sort(key=lambda x: (x.seqid, x.start))
     final_features.sort(key=lambda x: feature_order[x.featuretype])
     final_features.insert(0, top_target_feature)
-    if aln_cov < aln_cov_threshold or seq_id < seq_id_threshold:
+    if total_coverage < aln_cov_threshold or total_seq_id < seq_id_threshold:
         final_features = []
         unmapped_features.append(parent)
     else:
-        top_target_feature.score = 1 - seq_id
+        top_target_feature.score = 1 - total_seq_id
         top_target_feature.attributes["copy_id"] = [copy_id]
-        top_target_feature.attributes["coverage"] = [str(aln_cov)[0:5]]
-        top_target_feature.attributes["sequence_ID"] = [str(seq_id)[0:5]]
+        top_target_feature.attributes["fragment_coverage"] = [str(aln_cov)[0:5]]
+        top_target_feature.attributes["fragment_sequence_ID"] = [str(seq_id)[0:5]]
+        top_target_feature.attributes["fragment_number"]=[str(frag_num +1)]
+        top_target_feature.attributes["feature_coverage"] = [str(total_coverage)[0:5]]
+        top_target_feature.attributes["feature_sequence_ID"] = [str(total_seq_id)[0:5]]
     return final_features

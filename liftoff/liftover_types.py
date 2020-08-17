@@ -4,7 +4,7 @@ from liftoff import fix_overlapping_features, lift_features, liftoff_utils, alig
 def lift_original_annotation(ref_chroms, target_chroms, lifted_features_list, args, unmapped_features, parents_to_lift):
     liftover_type = "chrm_by_chrm"
     if target_chroms[0] == args.t and args.exclude_partial == False:
-        min_cov, min_seqid = 0.0, 0.0
+        min_cov, min_seqid = 0.05, 0.05
     else:
         min_cov, min_seqid = args.a, args.s
     feature_hierarchy, feature_db, ref_parent_order = extract_features.extract_features_to_lift(ref_chroms,
@@ -24,11 +24,13 @@ def align_and_lift_features(ref_chroms, target_chroms, args, feature_hierarchy, 
     print("lifting features")
     feature_locations = None
     lift_features.lift_all_features(aligned_segments, min_cov, feature_db, features_to_lift, feature_hierarchy,
-                                    unmapped_features, lifted_features_list, min_seqid, feature_locations, args.d)
+                                    unmapped_features, lifted_features_list, min_seqid, feature_locations, args.d,
+                                    args.frag)
     fix_overlapping_features.fix_incorrectly_overlapping_features(lifted_features_list, lifted_features_list,
                                                                   aligned_segments, unmapped_features,
                                                                   min_cov, feature_hierarchy,
-                                                                  feature_db, ref_parent_order, min_seqid, args.d)
+                                                                  feature_db, ref_parent_order, min_seqid, args.d,
+                                                                  args.frag)
 
 
 def map_unmapped_genes_agaisnt_all(unmapped_features, ref_chroms, target_chroms, lifted_features_list, feature_db,
@@ -38,7 +40,7 @@ def map_unmapped_genes_agaisnt_all(unmapped_features, ref_chroms, target_chroms,
     if args.exclude_partial:
         min_cov, min_seqid = args.a, args.s
     else:
-        min_cov, min_seqid = 0.0, 0.0
+        min_cov, min_seqid = 0.05, 0.05
     liftover_type = "unmapped"
     extract_features.get_gene_sequences(unmapped_dict, ref_chroms, args, liftover_type)
     unmapped_features = []
@@ -64,7 +66,7 @@ def map_unplaced_genes(unmapped_features, ref_chroms, target_chroms,
     if args.exclude_partial:
         min_cov, min_seqid = args.a, args.s
     else:
-        min_cov, min_seqid = 0.0, 0.0
+        min_cov, min_seqid = 0.05, 0.05
     align_and_lift_features(ref_chroms, target_chroms, args, feature_hierarchy, liftover_type, unmapped_features,
                             feature_db, unplaced_dict, lifted_features_list, ref_parent_order, min_cov, min_seqid)
 

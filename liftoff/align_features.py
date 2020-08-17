@@ -53,14 +53,15 @@ def align_single_chroms(ref_chroms, target_chroms, threads, args, genome_size, l
         split_prefix = args.dir + "/" + features_name + "_to_" + target_prefix + "_split"
         subprocess.run(
             [minimap2_path, '-o', output_file, target_file, features_file, '-a', '--eqx', '-N', str(args.n), '-p',
-             '0.5', '-t', threads_arg, "--split-prefix", split_prefix],
+             '0.5', '-t', threads_arg, "--split-prefix", split_prefix, '--end-bonus', '5'],
             )
     else:
         minimap2_index = build_minimap2_index(target_file, args, threads_arg, minimap2_path)
         subprocess.run(
             [minimap2_path, '-o', output_file, minimap2_index, features_file, '-a', '--eqx', '-N', str(args.n), '-p',
-             '0.5', '-t',
-             threads_arg])
+             '0.5', '-t', \
+                                                                                                         threads_arg,\
+                                                                                               '--end-bonus', '5',])
     return output_file
 
 
@@ -167,10 +168,11 @@ def edit_name(search_type, ref_seq, name_dict):
 def get_aligned_blocks(alignment, aln_id, feature_hierarchy, search_type):
     cigar_operations = get_cigar_operations()
     cigar = alignment.cigar
+    parent = feature_hierarchy.parents[liftoff_utils.convert_id_to_original(alignment.query_name)]
     query_start, query_end = get_query_start_and_end(alignment, cigar, cigar_operations)
     children = feature_hierarchy.children[liftoff_utils.convert_id_to_original(alignment.query_name)]
-    parent = feature_hierarchy.parents[liftoff_utils.convert_id_to_original(alignment.query_name)]
-    if search_type == "copies" and is_end_to_end_alignment(parent, query_start, query_end) is False:
+    end_to_end = is_end_to_end_alignment(parent, query_start, query_end)
+    if search_type == "copies" and end_to_end is False:
         return []
     reference_block_start, reference_block_pos = alignment.reference_start, alignment.reference_start
     query_block_start, query_block_pos = query_start, query_start
@@ -182,10 +184,10 @@ def get_aligned_blocks(alignment, aln_id, feature_hierarchy, search_type):
                                                                     length, cigar_operations, mismatches)
             if query_block_pos == query_end:
                 add_block(query_block_pos, reference_block_pos, aln_id, alignment, query_block_start,
-                          reference_block_start, mismatches, new_blocks, merged_children_coords, parent)
+                          reference_block_start, mismatches, new_blocks, merged_children_coords, parent, end_to_end)
         elif is_alignment_gap(operation, cigar_operations):
             add_block(query_block_pos, reference_block_pos, aln_id, alignment, query_block_start, reference_block_start,
-                      mismatches, new_blocks, merged_children_coords, parent)
+                      mismatches, new_blocks, merged_children_coords, parent, end_to_end)
             mismatches, query_block_start, reference_block_start, query_block_pos, reference_block_pos = \
                 end_block_at_gap(
                 operation, query_block_pos, reference_block_pos, length)
@@ -231,26 +233,30 @@ def adjust_position(operation, query_block_pos, reference_block_pos, length):
 
 
 def add_block(query_block_pos, reference_block_pos, aln_id, alignment, query_block_start, reference_block_start,
-              mismatches, new_blocks, merged_children_coords, parent):
+              mismatches, new_blocks, merged_children_coords, parent, end_to_end):
     query_block_end = query_block_pos - 1
     reference_block_end = reference_block_pos - 1
     new_block = aligned_seg.aligned_seg(aln_id, alignment.query_name, alignment.reference_name, query_block_start,
                                         query_block_end,
                                         reference_block_start, reference_block_end, alignment.is_reverse,
-                                        np.array(mismatches).astype(int))
-    if contains_child(new_block, merged_children_coords, parent):
+                                        np.array(mismatches).astype(int), end_to_end)
+    overlapping_children = find_overlapping_children(new_block, merged_children_coords, parent)
+    if overlapping_children != []:
         new_blocks.append(new_block)
 
 
-def contains_child(aln, children_coords, parent):
+def find_overlapping_children(aln, children_coords, parent):
+    overlapping_children = []
     for child_interval in children_coords:
         relative_start = liftoff_utils.get_relative_child_coord(parent, child_interval[0], aln.is_reverse)
         relative_end = liftoff_utils.get_relative_child_coord(parent, child_interval[1], aln.is_reverse)
         child_start, child_end = min(relative_start, relative_end), max(relative_start, relative_end)
         overlap = liftoff_utils.count_overlap(child_start, child_end, aln.query_block_start, aln.query_block_end)
         if overlap > 0:
-            return True
-    return False
+            overlapping_children.append(child_start)
+            overlapping_children.append(child_end)
+    return overlapping_children
+
 
 
 def is_alignment_gap(operation, cigar_operations):
