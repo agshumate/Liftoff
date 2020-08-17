@@ -9,7 +9,7 @@ def merge_lifted_features(mapped_children, parent, unmapped_features, aln_cov_th
     top_target_feature = None
     if len(mapped_children) == 0:
         unmapped_features.append(parent)
-        return [], 0
+        return [], 0, ""
     for child_name in mapped_children:
         child_feature = mapped_children[child_name]
         feature_list[child_feature.id] = child_feature
@@ -24,7 +24,7 @@ def merge_lifted_features(mapped_children, parent, unmapped_features, aln_cov_th
                                                  aln_cov_threshold,
                                                  unmapped_features, parent, feature_order, copy_id, frag_num,
                                                  total_seq_id, total_coverage)
-    return final_features, top_target_feature.start
+    return final_features, top_target_feature.start, top_target_feature.seqid
 
 
 def is_top_parent(child, parent):

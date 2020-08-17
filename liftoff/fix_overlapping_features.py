@@ -49,12 +49,14 @@ def compare_overlapping_feature(overlapping_feature, ref_parent_list, feature, r
     feature_to_remap = find_feature_to_remap(feature, overlapping_feature,
                                              ref_parent_order, target_parent_order, remap_features,
                                              ref_feature, ref_overlap_feature)
+
     remap_features.add(liftoff_utils.remove_frag_tag(feature_to_remap.attributes["copy_id"][0]))
 
 
 
 def find_feature_to_remap(feature, overlap_feature, ref_parent_order, target_parent_order, remap_features, ref_feature,
                           ref_overlap_feature):
+    #print(ref_feature.id, ref_overlap_feature.id)
     feature_is_copy = is_copy(feature)
     overlap_feature_is_copy = is_copy(overlap_feature)
     if feature_is_copy and overlap_feature_is_copy is False:
@@ -71,7 +73,8 @@ def find_feature_to_remap(feature, overlap_feature, ref_parent_order, target_par
         return feature
     farthest_neighbor_distance = find_farthest_neighbor_distance(feature_is_copy, ref_parent_order,
                                                                  target_parent_order, feature,
-                                                                 overlap_feature_is_copy, overlap_feature)
+                                                                overlap_feature_is_copy, overlap_feature)
+
     if farthest_neighbor_distance is not None:
         return farthest_neighbor_distance
     if is_shorter(feature, overlap_feature):
@@ -90,6 +93,7 @@ def already_in_list(feature, remap_features):
 
 
 def has_greater_seq_id(feature1, feature2):
+    #print(feature1.id, feature2.id,feature1.score, feature2.score, feature1.start, feature2.start )
     if feature1.score < feature2.score:
         return True
     return False

@@ -3,19 +3,24 @@ from liftoff import aligned_seg, liftoff_utils, new_feature
 import numpy as np
 
 
-def find_best_mapping(alignments, query_length, parent, feature_heirarchy, previous_gene_start, inter,
+def find_best_mapping(alignments, query_length, parent, feature_heirarchy, previous_gene_start, previous_gene_seq,
+                      inter,
                       lifted_features_list, distance_factor, allow_chrom_split):
     children = feature_heirarchy.children[parent.id]
     children_coords = liftoff_utils.merge_children_intervals(children)
     node_dict, aln_graph = intialize_graph()
     head_nodes, has_full_length = add_single_alignments(node_dict, aln_graph, alignments, children_coords, parent,
-                                       previous_gene_start, inter, feature_heirarchy.parents, lifted_features_list)
+                                       previous_gene_start, previous_gene_seq, inter, feature_heirarchy.parents,
+                                                        lifted_features_list)
 
     chain_alignments(head_nodes, node_dict, aln_graph, parent, children_coords, inter,
                      feature_heirarchy.parents, lifted_features_list, distance_factor, allow_chrom_split,
                      has_full_length)
     add_target_node(aln_graph, node_dict, query_length, children_coords, parent)
     shortest_path_nodes = find_shortest_path(node_dict, aln_graph)
+
+
+
     shortest_path_nodes_by_chrm = split_shortest_path_nodes(shortest_path_nodes)
     all_converted_results = []
     if len(shortest_path_nodes) == 0:
@@ -36,8 +41,9 @@ def intialize_graph():
 
 
 def add_single_alignments(node_dict, aln_graph, alignments, children_coords, parent,
-                          previous_gene_start, inter, parent_dict, lifted_features_list):
-    alignments = sort_alignments(previous_gene_start, alignments)
+                          previous_gene_start, previous_gene_seq, inter, parent_dict, lifted_features_list):
+
+    alignments = sort_alignments(previous_gene_start, previous_gene_seq, alignments)
     node_num = 1
     previous_node_id = -1
     head_nodes = []
@@ -64,10 +70,11 @@ def add_single_alignments(node_dict, aln_graph, alignments, children_coords, par
     return head_nodes, has_full_length
 
 
-def sort_alignments(previous_gene_start, alignments):
+def sort_alignments(previous_gene_start, previous_gene_seq, alignments):
     order_dict = {}
     order = 0
-    alignments = sorted(alignments, key=lambda x: np.abs(previous_gene_start - x.reference_block_start))
+    alignments = sorted(alignments, key=lambda x: [is_different_chrom(previous_gene_seq, x.reference_name), np.abs(
+        previous_gene_start - x.reference_block_start)])
     for aln in alignments:
         if aln.aln_id not in order_dict:
             order_dict[aln.aln_id] = order
@@ -75,6 +82,9 @@ def sort_alignments(previous_gene_start, alignments):
     alignments = sorted(alignments, key=lambda x: (order_dict[x.aln_id], x.query_block_start))
     return alignments
 
+
+def is_different_chrom(previous_gene_seq, current_seq):
+    return previous_gene_seq != current_seq
 
 def trim_overlap_coords(aln, parent, feature_name, intervals, parent_dict, lifted_features_list):
     ref_start, ref_end = aln.reference_block_start, aln.reference_block_end
@@ -287,7 +297,6 @@ def find_shortest_path(node_dict, aln_graph):
         shortest_path_nodes.append(node_dict[node_name])
     trim_path_boundaries(shortest_path_nodes)
     return shortest_path_nodes
-
 
 
 def get_weight(u, v, d, G):
