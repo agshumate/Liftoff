@@ -202,7 +202,7 @@ def get_edge_weight(from_node, to_node, children_coords, parent):
         relative_end = liftoff_utils.get_relative_child_coord(parent, child_interval[1], is_reverse)
         child_start, child_end = min(relative_start, relative_end), max(relative_start, relative_end)
         overlap = liftoff_utils.count_overlap(child_start, child_end, min(unaligned_range[0], unaligned_range[1]), max(unaligned_range[0], unaligned_range[1]))
-        if overlap==1 and unaligned_range[0] == unaligned_range[1]+1 and from_node.reference_name == \
+        if overlap==1 and unaligned_range[0] == unaligned_range[1] +1 and from_node.reference_name == \
                 to_node.reference_name:
             unaligned_exon_bases += (to_node.reference_block_start + node_overlap) - from_node.reference_block_end - 1
         else:
