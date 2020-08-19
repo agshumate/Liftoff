@@ -76,6 +76,8 @@ def process_final_features_list(feature_list, top_target_feature, seq_id, seq_id
         final_features = []
         unmapped_features.append(parent)
     else:
+        if top_target_feature.id == "gene-YLR157W-E":
+            print(top_target_feature.start)
         top_target_feature.score = 1 - total_seq_id
         top_target_feature.attributes["copy_id"] = [copy_id]
         top_target_feature.attributes["fragment_coverage"] = [str(aln_cov)[0:5]]

@@ -4,27 +4,31 @@ from liftoff import find_best_mapping, liftoff_utils, merge_lifted_features
 
 def lift_all_features(alns, threshold, feature_db, features_to_lift, feature_hierarchy,
                       unmapped_features, lifted_feature_list, seq_id_threshold, feature_locations, distance_factor,
-                      allow_chrom_split):
+                      allow_chrom_split, ref_parent_order):
     feature_order = get_feature_order(feature_db)
     alignments = sort_alignments(features_to_lift, alns)
     num_features = 0
-    previous_ref_chrom = ""
     for alignment in alignments:
-        ref_chrom = feature_hierarchy.parents[liftoff_utils.convert_id_to_original(alignment[0].query_name)].seqid
+        ref_feature = feature_hierarchy.parents[liftoff_utils.convert_id_to_original(alignment[0].query_name)]
+        ref_neighbor_name = liftoff_utils.find_nonoverlapping_upstream_neighbor(ref_parent_order, ref_feature.id)
+        if ref_neighbor_name is not None:
+            if ref_neighbor_name + "_0" + "_frag0" in lifted_feature_list:
+                previous_gene_start = lifted_feature_list[ref_neighbor_name + "_0" + "_frag0"][0].start
+                previous_gene_seq = lifted_feature_list[ref_neighbor_name + "_0" +"_frag0"][0].seqid
+            else:
+                previous_gene_start, previous_gene_seq = 0, ""
+        else:
+            previous_gene_start, previous_gene_seq = 0, ""
         num_features += 1
-        if ref_chrom != previous_ref_chrom:
-            previous_gene_seq = ""
-            previous_gene_start = 0
         lifted_fragments = lift_single_feature(threshold, feature_order, features_to_lift, feature_hierarchy,
                                                                                 previous_gene_start,previous_gene_seq, unmapped_features,
                                                                                 alignment, seq_id_threshold, feature_locations,
-                                                                                lifted_feature_list, distance_factor,allow_chrom_split)
+                                                                                lifted_feature_list, distance_factor,
+                                               allow_chrom_split)
         for lifted_fragment in lifted_fragments:
             if lifted_fragment[0] != []:
-                previous_gene_start = lifted_fragments[0][2]
-                previous_gene_seq = lifted_fragments[0][3]
                 lifted_feature_list[lifted_fragment[1]] = lifted_fragment[0]
-        previous_ref_chrom = ref_chrom
+
 
 
 def get_feature_order(gene_db):
@@ -74,7 +78,8 @@ def lift_single_feature(threshold, feature_order, features_to_lift, feature_hier
                                                                                           previous_gene_start,
                                                                     previous_gene_seq, feature_locations,
                                                                                           lifted_features_list,
-                                                                                          distance_factor, allow_chrom_split)
+                                                                                          distance_factor,
+                                                                    allow_chrom_split)
 
         lifted_fragments = []
         total_seq_id = sum(result[2] for result in all_converted_results)

@@ -41,22 +41,21 @@ def intialize_graph():
 
 
 def add_single_alignments(node_dict, aln_graph, alignments, children_coords, parent,
-                          previous_gene_start, previous_gene_seq, inter, parent_dict, lifted_features_list):
-
+                          previous_gene_start, previous_gene_seq, inter, parent_dict, lifted_features_list,
+                          ):
+    if inter is not None:
+        alignments = remove_alignments_with_overlap(alignments, inter, parent, parent_dict, lifted_features_list)
     alignments = sort_alignments(previous_gene_start, previous_gene_seq, alignments)
+    if parent.id == "gene-YLR157C-B":
+        print([aln.reference_block_start for aln in alignments], previous_gene_start)
     node_num = 1
     previous_node_id = -1
     head_nodes = []
     previous_node = 0
     has_full_length = False
-    for original_aln in alignments:
-        if original_aln.full_length:
+    for aln in alignments:
+        if aln.full_length:
             has_full_length = True
-        if inter is not None:
-            aln = trim_overlap_coords(original_aln, parent, original_aln.query_name, inter,
-                                      parent_dict, lifted_features_list)
-        else:
-            aln = original_aln
         if aln.aln_id != previous_node_id:
             previous_node = 0
             previous_node_id = aln.aln_id
@@ -83,35 +82,26 @@ def sort_alignments(previous_gene_start, previous_gene_seq, alignments):
     return alignments
 
 
+def remove_alignments_with_overlap(alignments, inter, parent, parent_dict, lifted_features_list):
+    aln_ids = set([aln.aln_id for aln in alignments])
+    alignments_to_keep = []
+    for aln_id in aln_ids:
+        single_alignment_group = [aln for aln in alignments if aln.aln_id == aln_id]
+        min_ref_start = min([aln.reference_block_start for aln in single_alignment_group])
+        max_ref_end = max([aln.reference_block_end for aln in single_alignment_group])
+        chrom = single_alignment_group[0].reference_name
+        strand = get_strand(single_alignment_group[0], parent)
+        feature_name = single_alignment_group[0].query_name
+        overlaps = liftoff_utils.find_overlaps(min_ref_start, max_ref_end, chrom, strand, feature_name, inter,
+                                               parent_dict, lifted_features_list, 0)
+        if len(overlaps) == 0:
+            alignments_to_keep += single_alignment_group
+    return alignments_to_keep
+
+
+
 def is_different_chrom(previous_gene_seq, current_seq):
     return previous_gene_seq != current_seq
-
-def trim_overlap_coords(aln, parent, feature_name, intervals, parent_dict, lifted_features_list):
-    ref_start, ref_end = aln.reference_block_start, aln.reference_block_end
-    target_chrm = aln.reference_name
-    target_strand = get_strand(aln, parent)
-    overlaps = liftoff_utils.find_overlaps(ref_start, ref_end, target_chrm, target_strand, feature_name, intervals,
-                                           parent_dict, lifted_features_list)
-    for overlap in overlaps:
-        start, end, chrm, strand = overlap[0], overlap[1], overlap[2][1].seqid, overlap[2][
-            1].strand
-        if target_strand == strand and target_chrm == chrm:
-            if start <= ref_start and end >= ref_end:
-                ref_start, ref_end = -1, -1
-                break
-            elif end < ref_start or start > ref_end:
-                ref_start, ref_end = ref_start, ref_end
-            elif start >= ref_start and end <= ref_end:
-                if start - ref_start > ref_end - end:
-                    ref_start, ref_end = ref_start, start - 1
-                else:
-                    ref_start, ref_end = end + 1, ref_end
-            elif start > ref_start:
-                ref_start, ref_end = ref_start, start - 1
-            else:
-                ref_start, ref_end = end + 1, ref_end
-    updated_aln = update_coords(ref_start, ref_end, aln)
-    return updated_aln
 
 
 def get_strand(aln, parent):
@@ -123,20 +113,6 @@ def get_strand(aln, parent):
     else:
         strand = parent.strand
     return strand
-
-
-def update_coords(ref_start, ref_end, aln):
-    start_diff = ref_start - aln.reference_block_start
-    end_diff = aln.reference_block_end - ref_end
-    if ref_start != aln.reference_block_start or ref_end != aln.reference_block_end:
-        new_query_start = aln.query_block_start + start_diff
-        new_query_end = aln.query_block_end - end_diff
-        new_aln = aligned_seg.aligned_seg(aln.aln_id, aln.query_name, aln.reference_name, new_query_start,
-                                          new_query_end, ref_start, ref_end, aln.is_reverse, aln.mismatches,
-                                          aln.full_length)
-    else:
-        new_aln = aln
-    return new_aln
 
 
 def is_valid_alignment(previous_node, aln, node_dict, parent, inter, parent_dict,
@@ -159,7 +135,7 @@ def spans_overlap_region(from_node, to_node, parent, intervals, parent_dict, lif
     strand = get_strand(from_node, parent)
     overlaps = liftoff_utils.find_overlaps(from_node.reference_block_end, to_node.reference_block_start + node_overlap,
                                            target_chrm, strand, from_node.query_name, intervals,
-                                           parent_dict, lifted_features_list)
+                                           parent_dict, lifted_features_list,0)
     return len(overlaps) > 0
 
 
@@ -202,7 +178,7 @@ def get_edge_weight(from_node, to_node, children_coords, parent):
         relative_end = liftoff_utils.get_relative_child_coord(parent, child_interval[1], is_reverse)
         child_start, child_end = min(relative_start, relative_end), max(relative_start, relative_end)
         overlap = liftoff_utils.count_overlap(child_start, child_end, min(unaligned_range[0], unaligned_range[1]), max(unaligned_range[0], unaligned_range[1]))
-        if overlap==1 and unaligned_range[0] == unaligned_range[1] +1 and from_node.reference_name == \
+        if overlap==1 and unaligned_range[0] == unaligned_range[1]  and from_node.reference_name == \
                 to_node.reference_name:
             unaligned_exon_bases += (to_node.reference_block_start + node_overlap) - from_node.reference_block_end - 1
         else:

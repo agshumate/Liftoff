@@ -85,6 +85,8 @@ def parse_args():
     parser.add_argument('-frag', default =False, action='store_true', help="allow genes to map across contigs for "
                                                                            "fragmented assemblies")
     parser.add_argument('-scaffold', default=False, action='store_true')
+    parser.add_argument('-overlap', default=0.1, metavar=0.1, help="maximum fraction of overlap allowed by 2 "
+                                                                   "features", type=float)
     args = parser.parse_args()
     if (float(args.s) > float(args.sc)):
         parser.error("-sc must be greater than or equal to -s")
