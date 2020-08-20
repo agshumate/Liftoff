@@ -2,8 +2,8 @@ from liftoff import write_new_gff, liftover_types
 import argparse
 
 
-def main():
-    args = parse_args()
+def main(arglist=None):
+    args = parse_args(arglist)
     if args.chroms is not None:
         ref_chroms, target_chroms = parse_chrm_files(args.chroms)
     else:
@@ -25,7 +25,7 @@ def main():
     write_new_gff.write_new_gff(lifted_feature_list, feature_hierarchy.parents, args)
 
 
-def parse_args():
+def parse_args(arglist=None):
     parser = argparse.ArgumentParser(description='Lift features from one genome assembly to another')
     group = parser.add_mutually_exclusive_group(required=True)
     parser.add_argument("-V", "--version", help="show program version", action='version', version="v1.3.0")
@@ -77,7 +77,7 @@ def parse_args():
                         help="write partial mappings below -s and -a threshold to unmapped_features.txt. If true "
                              "partial/low sequence identity mappings will be included in the gff file with "
                              "partial_mapaping=True, low_identity=True in comments")
-    args = parser.parse_args()
+    args = parser.parse_args(arglist)
     if (float(args.s) > float(args.sc)):
         parser.error("-sc must be greater than or equal to -s")
     if (args.chroms is None and args.unplaced is not None):
