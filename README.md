@@ -9,21 +9,16 @@ Here we introduce Liftoff, an accurate tool that maps annotations in GFF or GTF 
 
 ### Getting Started
 
-#### Step 1:
-Liftoff requires Python3 and also depends on Minimap2. Minimap2 which can be installed by following instructions [here](https://github.com/lh3/minimap2/releases/tag/v2.17). It can also be installed with conda with the following command
+#### INSTALLATION
+
+The easiest way to install Liftoff is with the [conda package manager](https://docs.conda.io/en/latest/).
 
 ```
-conda install -c bioconda minimap2
+conda install -c bioconda liftoff
 ```
-Add minimap2 is in your path after installation or use the -m argument when running Liftoff to specficy a different path 
 
+If you don't have conda installed, you need to install Minimap2 (following instructions [here](https://github.com/lh3/minimap2/releases/tag/v2.17)) and Liftoff from source.
 
-#### Step 2: 
-The easiest way to install Liftoff is with pip 
-```
-pip install Liftoff
-```
-Or you can install it from source with the following steps
 ```
 git clone https://github.com/agshumate/Liftoff liftoff 
 cd liftoff
@@ -133,7 +128,3 @@ A list of unplaced sequence names can be provided with the -unplaced option. Wit
 
 ### Extra Gene Copies
 With the -copies option, Liftoff will look for extra copies of genes that are not annotated in the reference after the initial lift over. A gene copy will only be annonated at a locus if it does not overlap another annotated feature. By default, exons/CDS's must have 100% sequence identity Extra gene copies will have the same ID as the reference gene and will be tagged with extra_copy_number={copy_number} in the last column of the GFF file. 
-
-
-
-
