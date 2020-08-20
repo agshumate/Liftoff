@@ -32,62 +32,68 @@ python setup.py install
 
 ### USAGE
 ```
-usage: liftoff [-h] [-V] -t <target.fasta> -r <reference.fasta>
-               [-g <ref_annotation.gff>] [-chroms <chroms.txt>] [-p 1]
-               [-o <output.gff>] [-db DB] [-infer_transcripts]
-               [-u <unmapped_features.txt>] [-infer_genes] [-a 0.5] [-s 0.5]
-               [-m PATH] [-dir <intermediate_files_dir>] [-n 50]
-               [-f feature types] [-d 2] [-exclude_partial]
+usage: liftoff [-h] (-g GFF | -db DB) [-o FILE] [-u FILE] [-exclude_partial]
+               [-dir DIR] [-a A] [-s S] [-n N] [-d D] [-V] [-p P] [-m PATH]
+               [-f TYPES] [-infer_genes] [-infer_transcripts] [-chroms TXT]
+               [-unplaced TXT] [-copies] [-sc SC]
+               target reference
 
 Lift features from one genome assembly to another
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -V, --version         show program version
-  -t <target.fasta>     target fasta genome to lift genes to
-  -r <reference.fasta>  reference fasta genome to lift genes from
-  -g <ref_annotation.gff>
-                        annotation file to lift over in gff or gtf format
-  -chroms <chroms.txt>  comma seperated file with corresponding chromosomes in
-                        the reference,target sequences
-  -p 1                  processes
-  -o <output.gff>       output file
-  -db DB                name of feature database. If none, -g argument must be
-                        provided and a database will be built automatically
-  -infer_transcripts    use if GTF file only includes exon/CDS features and
-                        does not include transcripts/mRNA
-  -u <unmapped_features.txt>
-                        name of file to write unmapped features to
-  -infer_genes          use if GTF file only includes transcripts, exon/CDS
-                        features
-  -a 0.5                minimum alignment coverage to consider a feature
-                        mapped [0-1]
-  -s 0.5                minimum sequence identity in child features (usually
-                        exons/CDS) to consider a feature mapped [0-1]
-  -unplaced <unplaced_seq_names.txt>
-                        text file with name(s) of unplaced sequences to map
-                        genes from after genes from chromosomes in chroms.txt
-                        are mapped
-  -copies               look for extra gene copies in the target genome
-  -sc 1.0               with -copies, minimum sequence identity in exons/CDS
-                        for which a gene is considered a copy. Must be greater
-                        than -s
-  -m PATH               Minimap2 path
-  -dir <intermediate_files_dir>
-                        name of directory to save intermediate fasta and SAM
-                        files
-  -n 50                 max number of Minimap2 alignments to consider for each
-                        feature
-  -f feature types      list of feature types to lift-over
-  -d 2                  distance scaling factor. Alignment nodes father apart
-                        than this in the target genome will not be connected
-                        in the graph
-  -exclude_partial      write partial mappings below -s and -a threshold to
-                        unmapped_features.txt. If true partial/low sequence
-                        identity mappings will be included in the gff file
-                        with partial_mapaping=True, low_identity=True in
-                        comments
- 
+Required input (sequences):
+  target              target fasta genome to lift genes to
+  reference           reference fasta genome to lift genes from
+
+Required input (annotation):
+  -g GFF              annotation file to lift over in GFF or GTF format
+  -db DB              name of feature database; if not specified, the -g
+                      argument must be provided and a database will be built
+                      automatically
+
+Output:
+  -o FILE             write output to FILE in GFF3 format; by default, output
+                      is written to terminal (stdout)
+  -u FILE             write unmapped features to FILE; default is
+                      "unmapped_features.txt"
+  -exclude_partial    write partial mappings below -s and -a threshold to
+                      unmapped_features.txt; if true partial/low sequence
+                      identity mappings will be included in the gff file with
+                      partial_mapping=True, low_identity=True in comments
+  -dir DIR            name of directory to save intermediate fasta and SAM
+                      files; default is "intermediate_files"
+
+Alignment filtering:
+  -a A                designate a feature mapped only if it aligns with
+                      coverage ≥A; by default A=0.5
+  -s S                designate a feature mapped only if its child features
+                      (usually exons/CDS) align with sequence identity ≥S; by
+                      default S=0.5
+  -n N                consider at most N Minimap2 alignments for each feature;
+                      by default N=50
+  -d D                distance scaling factor; alignment nodes separated by
+                      more than a factor of D in the target genome will not be
+                      connected in the graph; by default D=2.0
+
+Miscellaneous settings:
+  -h, --help          show this help message and exit
+  -V, --version       show program version
+  -p P                use P parallel processes to accelerate alignment; by
+                      default P=1
+  -m PATH             Minimap2 path
+  -f TYPES            list of feature types to lift over
+  -infer_genes        use if annotation file only includes transcripts,
+                      exon/CDS features
+  -infer_transcripts  use if annotation file only includes exon/CDS features
+                      and does not include transcripts/mRNA
+  -chroms TXT         comma seperated file with corresponding chromosomes in
+                      the reference,target sequences
+  -unplaced TXT       text file with name(s) of unplaced sequences to map
+                      genes from after genes from chromosomes in chroms.txt
+                      are mapped; default is "unplaced_seq_names.txt"
+  -copies             look for extra gene copies in the target genome
+  -sc SC              with -copies, minimum sequence identity in exons/CDS for
+                      which a gene is considered a copy; must be greater than
+                      -s; default is 1.0
 ```
 ### Input and Output
 The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation or feature database. If an annotation file is provided with the -g argument, a feature database will be built automatically and can be used for future lift overs by providing the -db argument. The output is a gff file for the target genome and a file with the IDs of unmapped genes. 
@@ -133,7 +139,3 @@ A list of unplaced sequence names can be provided with the -unplaced option. Wit
 
 ### Extra Gene Copies
 With the -copies option, Liftoff will look for extra copies of genes that are not annotated in the reference after the initial lift over. A gene copy will only be annonated at a locus if it does not overlap another annotated feature. By default, exons/CDS's must have 100% sequence identity Extra gene copies will have the same ID as the reference gene and will be tagged with extra_copy_number={copy_number} in the last column of the GFF file. 
-
-
-
-
