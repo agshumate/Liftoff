@@ -144,10 +144,10 @@ def get_parent_features_to_lift(feature_types_file):
 
 def map_unmapped_features(unmapped_features, target_chroms, lifted_feature_list, feature_db, feature_hierarchy,
                           ref_parent_order, args):
-    if len(unmapped_features) > 0 and target_chroms[0] != args.t:
+    if len(unmapped_features) > 0 and target_chroms[0] != args.target:
         print("mapping unaligned features to whole genome")
-        ref_chroms = [args.r]
-        target_chroms = [args.t]
+        ref_chroms = [args.reference]
+        target_chroms = [args.target]
         return liftover_types.map_unmapped_genes_agaisnt_all(unmapped_features, ref_chroms, target_chroms,
                                                              lifted_feature_list, feature_db, feature_hierarchy,
                                                              ref_parent_order, args)
@@ -159,7 +159,7 @@ def map_features_from_unplaced_seq(unmapped_features, lifted_feature_list, featu
     if args.unplaced is not None and args.chroms is not None:
         print("mapping unplaced genes")
         ref_chroms, target_chroms = parse_chrm_files(args.unplaced)
-        target_chroms = [args.t]
+        target_chroms = [args.target]
         liftover_types.map_unplaced_genes(unmapped_features, ref_chroms, target_chroms,
                                           lifted_feature_list, feature_db, feature_hierarchy, ref_parent_order, args)
 
@@ -174,8 +174,8 @@ def write_unmapped_features_file(out_arg, unmapped_features):
 def map_extra_copies(args, lifted_feature_list, feature_hierarchy, feature_db, ref_parent_order):
     if args.copies:
         print("mapping gene copies")
-        ref_chroms = [args.r]
-        target_chroms = [args.t]
+        ref_chroms = [args.reference]
+        target_chroms = [args.target]
         liftover_types.map_extra_copies(ref_chroms, target_chroms, lifted_feature_list, feature_hierarchy, feature_db,
                                         ref_parent_order, args)
 

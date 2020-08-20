@@ -3,7 +3,7 @@ from liftoff import fix_overlapping_features, lift_features, liftoff_utils, alig
 
 def lift_original_annotation(ref_chroms, target_chroms, lifted_features_list, args, unmapped_features, parents_to_lift):
     liftover_type = "chrm_by_chrm"
-    if target_chroms[0] == args.t and args.exclude_partial == False:
+    if target_chroms[0] == args.target and args.exclude_partial == False:
         min_cov, min_seqid = 0.0, 0.0
     else:
         min_cov, min_seqid = args.a, args.s
