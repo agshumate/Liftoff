@@ -73,6 +73,10 @@ Alignment filtering:
   -d D                distance scaling factor; alignment nodes separated by
                       more than a factor of D in the target genome will not be
                       connected in the graph; by default D=2.0
+  -flank F            amount of flanking sequence to align as a fraction
+                      [0.0-1.0] of gene length. This can improve gene
+                      alignment where gene structure differs between target
+                      and reference; by default F=0.0
 
 Miscellaneous settings:
   -h, --help          show this help message and exit
@@ -94,6 +98,8 @@ Miscellaneous settings:
   -sc SC              with -copies, minimum sequence identity in exons/CDS for
                       which a gene is considered a copy; must be greater than
                       -s; default is 1.0
+  -overlap O          maximum fraction [0.0-1.0] of overlap allowed by 2
+                      features; by default O=0.1
 ```
 ### Input and Output
 The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation or feature database. If an annotation file is provided with the -g argument, a feature database will be built automatically and can be used for future lift overs by providing the -db argument. The output is a gff file for the target genome and a file with the IDs of unmapped genes. 
@@ -103,6 +109,9 @@ By default, 'gene' features and all child features of genes (i.e. trancripts, mR
 
 ### Sequence Identity and Alignment Coverage
 A gene will be considered mapped successfully if the alignment coverage and sequence identity in the child features (usually exons/CDS) is >= 50%. This can be changed with the -a and -s options. By default, genes that map below these thresholds will be included in the gff file with partial_mapping=True and low_identity=True in the last column. To exclude these partial/low identity mappings from the final GFF use -exclude_partial, and these genes will instead be written to the unmapped_features.txt file. The sequence identity and alignment coverage is reported in the final column of the output GFF for feach gene. 
+
+### Gene Structure in Cross-Species Lift-over
+Liftoff works best when the gene structure (i.e intron size) is similar in the reference and target genomes. When genes differ significantly in size, the alignments are more fragmented and often small exons at the beginning or end of the gene are not aligned. Adding and aligning some percentage of flanking sequence to the gene with the -flank option can improve this in some cases. Additionally increasing the -d parameter will allow mappings where the genes are much larger in the target genome than in the reference. 
 
 ### Chromosome by Chromosome Lift-over
 By default, all genes will be aligned to the entire target assembly. However, for chromosome-scale assemblies of the same species, the -chroms option can be used to perform the lift-over chromosome by chromosome which improves accuracy. After the chromosome by chromosome lift over is complete, any genes that did not map will be aligned to the whole genome. This is strongly recommended for repetitive/polyploid genomes where there are many similar genes on different chromosomes. This option can be enabled by providing a  comma seperated file chroms.txt with corresponding chromosome names with the -chroms argument. Each line of the file should follow {ref_chrom_name},{target_chrom_name} for each pair of corresponding chromosomes. For example, a lift over from a Genbank human assembly to a Refseq human assembly would have the following chroms.txt file. 
