@@ -73,6 +73,10 @@ Alignment filtering:
   -d D                distance scaling factor; alignment nodes separated by
                       more than a factor of D in the target genome will not be
                       connected in the graph; by default D=2.0
+  -flank F            amount of flanking sequence to align as a fraction
+                      [0.0-1.0] of gene length. This can improve gene
+                      alignment where gene structure differs between target
+                      and reference; by default F=0.0
 
 Miscellaneous settings:
   -h, --help          show this help message and exit
@@ -94,6 +98,8 @@ Miscellaneous settings:
   -sc SC              with -copies, minimum sequence identity in exons/CDS for
                       which a gene is considered a copy; must be greater than
                       -s; default is 1.0
+  -overlap O          maximum fraction [0.0-1.0] of overlap allowed by 2
+                      features; by default O=0.1
 ```
 ### Input and Output
 The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation or feature database. If an annotation file is provided with the -g argument, a feature database will be built automatically and can be used for future lift overs by providing the -db argument. The output is a gff file for the target genome and a file with the IDs of unmapped genes. 
