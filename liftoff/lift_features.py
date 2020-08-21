@@ -1,34 +1,25 @@
 from liftoff import find_best_mapping, liftoff_utils, merge_lifted_features
 
 
-
 def lift_all_features(alns, threshold, feature_db, features_to_lift, feature_hierarchy,
                       unmapped_features, lifted_feature_list, seq_id_threshold, feature_locations, distance_factor,
-                      allow_chrom_split, ref_parent_order):
+                      ref_parent_order):
     feature_order = get_feature_order(feature_db)
     alignments = sort_alignments(features_to_lift, alns)
     num_features = 0
     for alignment in alignments:
-        ref_feature = feature_hierarchy.parents[liftoff_utils.convert_id_to_original(alignment[0].query_name)]
-        ref_neighbor_name = liftoff_utils.find_nonoverlapping_upstream_neighbor(ref_parent_order, ref_feature.id)
-        if ref_neighbor_name is not None:
-            if ref_neighbor_name + "_0" + "_frag0" in lifted_feature_list:
-                previous_gene_start = lifted_feature_list[ref_neighbor_name + "_0" + "_frag0"][0].start
-                previous_gene_seq = lifted_feature_list[ref_neighbor_name + "_0" +"_frag0"][0].seqid
-            else:
-                previous_gene_start, previous_gene_seq = 0, ""
-        else:
-            previous_gene_start, previous_gene_seq = 0, ""
         num_features += 1
-        lifted_fragments = lift_single_feature(threshold, feature_order, features_to_lift, feature_hierarchy,
-                                                                                previous_gene_start,previous_gene_seq, unmapped_features,
-                                                                                alignment, seq_id_threshold, feature_locations,
-                                                                                lifted_feature_list, distance_factor,
-                                               allow_chrom_split)
-        for lifted_fragment in lifted_fragments:
-            if lifted_fragment[0] != []:
-                lifted_feature_list[lifted_fragment[1]] = lifted_fragment[0]
+        preivous_feature_start, previous_feature_seq, previous_feature_ref_start = find_neighbor_location(
+            feature_hierarchy.parents, alignment, lifted_feature_list, ref_parent_order)
 
+        lifted_features, parent_name = lift_single_feature(threshold, feature_order, features_to_lift,
+                                                           feature_hierarchy, preivous_feature_start,
+                                                           previous_feature_ref_start,
+                                                           previous_feature_seq, unmapped_features,
+                                                           alignment, seq_id_threshold, feature_locations,
+                                                           lifted_feature_list, distance_factor)
+        if lifted_features != []:
+            lifted_feature_list[parent_name] = lifted_features
 
 
 def get_feature_order(gene_db):
@@ -63,44 +54,46 @@ def sort_alignments(parent_dict, alignments):
     return values
 
 
+def find_neighbor_location(ref_parents, alignment, lifted_feature_list, ref_parent_order):
+    ref_feature = ref_parents[liftoff_utils.convert_id_to_original(alignment[0].query_name)]
+    ref_neighbor_name = liftoff_utils.find_nonoverlapping_upstream_neighbor(ref_parent_order, ref_feature.id)
+    if ref_neighbor_name is not None:
+        ref_neighbor_key = ref_neighbor_name + "_0"
+        if ref_neighbor_key in lifted_feature_list:
+            previous_feature_start = lifted_feature_list[ref_neighbor_key][0].start
+            previous_feature_seq = lifted_feature_list[ref_neighbor_key][0].seqid
+            previous_feature_ref_start = ref_parents[ref_neighbor_name].start
+            return previous_feature_start, previous_feature_seq, previous_feature_ref_start
+    return 0, "", 0
+
+
 def lift_single_feature(threshold, feature_order, features_to_lift, feature_hierarchy,
-                        previous_gene_start, previous_gene_seq, unmapped_features, aligned_feature, seq_id_threshold,
+                        previous_feature_start, previous_feature_ref_start, previous_gene_seq, unmapped_features,
+                        aligned_feature, seq_id_threshold,
                         feature_locations,
-                        lifted_features_list, distance_factor, allow_chrom_split):
+                        lifted_features_list, distance_factor, ):
     new_parent_name = aligned_feature[0].query_name
     original_parent_name = liftoff_utils.convert_id_to_original(new_parent_name)
     parent = features_to_lift[original_parent_name]
     if len(aligned_feature) > 0:
-        all_converted_results = find_best_mapping.find_best_mapping(aligned_feature,
+        lifted_children, alignment_coverage, seq_id = find_best_mapping.find_best_mapping(aligned_feature,
                                                                                           parent.end - parent.start + 1,
                                                                                           parent,
                                                                                           feature_hierarchy,
-                                                                                          previous_gene_start,
-                                                                    previous_gene_seq, feature_locations,
+                                                                                          previous_feature_start,
+                                                                                          previous_feature_ref_start,
+                                                                                          previous_gene_seq,
+                                                                                          feature_locations,
                                                                                           lifted_features_list,
-                                                                                          distance_factor,
-                                                                    allow_chrom_split)
+                                                                                          distance_factor)
 
-        lifted_fragments = []
-        total_seq_id = sum(result[2] for result in all_converted_results)
-        total_coverage = sum(result[1] for result in all_converted_results)
-        for i in range (len(all_converted_results)):
-            result = all_converted_results[i]
-            frag_tag = "_frag" + str(i)
-            lifted_children, alignment_coverage, seq_id = result[0], result[1], result[2]
-            lifted_features, feature_start, feature_chrm = merge_lifted_features.merge_lifted_features(lifted_children,
-                                                                                         parent,
-                                                                                         unmapped_features, threshold,
-                                                                                         new_parent_name + frag_tag,
-                                                                                         feature_order,
-                                                                                         feature_hierarchy,
-                                                                                         alignment_coverage, seq_id,
-                                                                                         seq_id_threshold, i,
-                                                                                         total_seq_id, total_coverage)
-            lifted_fragments.append([lifted_features, aligned_feature[0].query_name + frag_tag, feature_start, feature_chrm])
+        lifted_features = merge_lifted_features.merge_lifted_features(lifted_children,
+                                                                      parent,
+                                                                      unmapped_features, threshold,
+                                                                      new_parent_name, feature_order,
+                                                                      feature_hierarchy,
+                                                                      alignment_coverage, seq_id,
+                                                                      seq_id_threshold)
     else:
         unmapped_features.append(parent)
-        feature_start = 0
-    return lifted_fragments
-
-
+    return lifted_features, aligned_feature[0].query_name

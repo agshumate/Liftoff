@@ -25,7 +25,6 @@ def main():
     write_new_gff.write_new_gff(lifted_feature_list, feature_hierarchy.parents, args)
 
 
-
 def parse_args():
     parser = argparse.ArgumentParser(description='Lift features from one genome assembly to another')
     group = parser.add_mutually_exclusive_group(required=True)
@@ -71,9 +70,10 @@ def parse_args():
                         help="max number of Minimap2 alignments to consider for each feature", type=int)
     parser.add_argument('-f', required=False, metavar="feature types", help="list of feature types to lift-over")
     parser.add_argument('-d', required=False, metavar=2, default=2, help="distance scaling factor. Alignment nodes " \
-                                                                       "father apart "
-                                                              "than this in the target genome will not be connected in "
-                                                              "the graph", type=float)
+                                                                         "father apart "
+                                                                         "than this in the target genome will not be "
+                                                                         "connected in "
+                                                                         "the graph", type=float)
     parser.add_argument('-exclude_partial', default=False, action='store_true',
                         help="write partial mappings below -s and -a threshold to unmapped_features.txt. If true "
                              "partial/low sequence identity mappings will be included in the gff file with "
@@ -81,10 +81,7 @@ def parse_args():
     parser.add_argument('-flank', default=0, metavar=0, type=float, help="amount of flanking sequence to align as a "
                                                                          "percentage of gene length. This can improve"
                                                                          " gene alignment where gene structure "
-                                                                         "differs between target and reference" )
-    parser.add_argument('-frag', default =False, action='store_true', help="allow genes to map across contigs for "
-                                                                           "fragmented assemblies")
-    parser.add_argument('-scaffold', default=False, action='store_true')
+                                                                         "differs between target and reference")
     parser.add_argument('-overlap', default=0.1, metavar=0.1, help="maximum fraction of overlap allowed by 2 "
                                                                    "features", type=float)
     args = parser.parse_args()

@@ -5,16 +5,14 @@ from interlap import InterLap
 
 def fix_incorrectly_overlapping_features(all_lifted_features, features_to_check, all_aligned_segs,
                                          unmapped_features, threshold, feature_hierarchy, feature_db,
-                                         ref_parent_order, seq_id_threshold, distance_factor, allow_chrom_split,
+                                         ref_parent_order, seq_id_threshold, distance_factor,
                                          max_overlap):
     features_to_remap, feature_locations = check_homologues(all_lifted_features, features_to_check,
                                                             feature_hierarchy.parents,
                                                             ref_parent_order, max_overlap)
     resolve_overlapping_homologues(all_aligned_segs, all_lifted_features, features_to_remap, unmapped_features,
                                    threshold, feature_hierarchy, feature_db, ref_parent_order, seq_id_threshold,
-                                   feature_locations, distance_factor, allow_chrom_split ,max_overlap)
-
-
+                                   feature_locations, distance_factor, max_overlap)
 
 
 def check_homologues(all_lifted_features, lifted_features_to_check, parent_dict, ref_parent_order, max_overlap):
@@ -31,7 +29,7 @@ def check_homologues(all_lifted_features, lifted_features_to_check, parent_dict,
             if overlap[2][0] != feature.attributes["copy_id"][0]:
                 feature_to_compare = overlap[2][1]
                 compare_overlapping_feature(feature_to_compare, feature, remap_features, ref_parent_order,
-                                        target_parent_order)
+                                            target_parent_order)
     return remap_features, feature_locations
 
 
@@ -49,9 +47,7 @@ def compare_overlapping_feature(overlapping_feature, feature, remap_features, re
     feature_to_remap = find_feature_to_remap(feature, overlapping_feature,
                                              ref_parent_order, target_parent_order, remap_features)
 
-
-    remap_features.add(liftoff_utils.remove_frag_tag(feature_to_remap.attributes["copy_id"][0]))
-
+    remap_features.add(feature_to_remap.attributes["copy_id"][0])
 
 
 def find_feature_to_remap(feature, overlap_feature, ref_parent_order, target_parent_order, remap_features):
@@ -69,10 +65,9 @@ def find_feature_to_remap(feature, overlap_feature, ref_parent_order, target_par
         return overlap_feature
     if has_greater_seq_id(overlap_feature, feature):
         return feature
-    farthest_neighbor_distance = find_farthest_neighbor_distance(feature_is_copy, ref_parent_order,
-                                                                 target_parent_order, feature,
-                                                                overlap_feature_is_copy, overlap_feature)
-
+    farthest_neighbor_distance = find_out_of_order_feature(feature_is_copy, ref_parent_order,
+                                                           target_parent_order, feature,
+                                                           overlap_feature_is_copy, overlap_feature)
     if farthest_neighbor_distance is not None:
         return farthest_neighbor_distance
     if is_shorter(feature, overlap_feature):
@@ -83,7 +78,7 @@ def find_feature_to_remap(feature, overlap_feature, ref_parent_order, target_par
 
 
 def is_copy(feature):
-    return liftoff_utils.remove_frag_tag(feature.attributes["copy_id"][0])[-2:] != '_0'
+    return feature.attributes["copy_id"][0][-2:] != '_0'
 
 
 def already_in_list(feature, remap_features):
@@ -96,14 +91,14 @@ def has_greater_seq_id(feature1, feature2):
     return False
 
 
-def find_farthest_neighbor_distance(feature_is_copy, ref_parent_order, target_parent_order, feature,
-                                    overlap_feature_is_copy, overlap_feature):
+def find_out_of_order_feature(feature_is_copy, ref_parent_order, target_parent_order, feature,
+                              overlap_feature_is_copy, overlap_feature):
     if feature_is_copy is False:
-        neighbor_distance_feature = check_order(ref_parent_order, target_parent_order, feature)
+        neighbor_distance_feature = check_order(ref_parent_order, target_parent_order, feature, overlap_feature)
     else:
         neighbor_distance_feature = None
     if overlap_feature_is_copy is False:
-        neighbor_distance_overlap_feature= check_order(ref_parent_order, target_parent_order, overlap_feature,)
+        neighbor_distance_overlap_feature = check_order(ref_parent_order, target_parent_order, overlap_feature, feature)
     else:
         neighbor_distance_overlap_feature = None
     if neighbor_distance_feature is not None and neighbor_distance_overlap_feature is not None:
@@ -114,24 +109,26 @@ def find_farthest_neighbor_distance(feature_is_copy, ref_parent_order, target_pa
     return None
 
 
-def check_order(ref_parent_order, target_parent_order, feature):
+def check_order(ref_parent_order, target_parent_order, feature, overlap_feature):
     ref_neighbor_upstream = liftoff_utils.find_nonoverlapping_upstream_neighbor(ref_parent_order, feature.id)
     if ref_neighbor_upstream is not None:
-        ref_distance = find_distance_between_features(ref_neighbor_upstream, target_parent_order, feature)
-        if feature.id == "gene-YHR053C":
-            print(ref_neighbor_upstream, ref_distance)
+        ref_distance = find_distance_between_features(ref_neighbor_upstream, target_parent_order, feature,
+                                                      overlap_feature)
         return ref_distance
     return None
 
 
-
-def find_distance_between_features(ref_neighbor_upstream, target_parent_order, feature):
-    feature_location = np.where(target_parent_order[:, 0] == feature.id)[0]
-    neighbor_location = np.where(target_parent_order[:, 0] == ref_neighbor_upstream)[0]
-    if len(feature_location) > 0 and len(neighbor_location) > 0:
-        if feature.id == "gene-YHR053C":
-            print(target_parent_order[neighbor_location[0]:feature_location[0]+1])
-        return np.abs(feature_location[0] - neighbor_location[0])
+def find_distance_between_features(ref_neighbor_upstream, target_parent_order, feature, overlap_feature):
+    feature_location_arr = np.where(target_parent_order[:, 0] == feature.id)[0]
+    neighbor_location_arr = np.where(target_parent_order[:, 0] == ref_neighbor_upstream)[0]
+    if len(feature_location_arr) > 0 and len(neighbor_location_arr) > 0:
+        feature_location, neighbor_location = feature_location_arr[0], neighbor_location_arr[0]
+        features_in_range = target_parent_order[min(feature_location, neighbor_location):max(feature_location,
+                                                                                             neighbor_location) + 1]
+        distance = np.abs(feature_location - neighbor_location)
+        if overlap_feature.id in features_in_range[:, 0]:
+            distance -= 1
+        return distance
     return None
 
 
@@ -141,11 +138,10 @@ def is_shorter(feature1, feature2):
 
 def resolve_overlapping_homologues(all_aligned_segs, lifted_feature_list, features_to_remap, unmapped_features,
                                    threshold, feature_hierarchy, feature_db, ref_parent_order, seq_id_threshold,
-                                   feature_locations, distance_factor, allow_chrom_split, max_overlap):
+                                   feature_locations, distance_factor, max_overlap):
     iter = 0
     max_iter = 10 * len(features_to_remap)
     while len(features_to_remap) > 0:
-        print(len(features_to_remap))
         iter += 1
         if iter > max_iter:
             break
@@ -154,9 +150,9 @@ def resolve_overlapping_homologues(all_aligned_segs, lifted_feature_list, featur
         lift_features.lift_all_features(aligned_segs_for_remap, threshold, feature_db,
                                         feature_hierarchy.parents, feature_hierarchy, unmapped_features,
                                         lifted_feature_list, seq_id_threshold, feature_locations, distance_factor,
-                                        allow_chrom_split, ref_parent_order)
+                                        ref_parent_order)
         features_to_check = get_successfully_remapped_features(lifted_feature_list, features_to_remap,
-                                                               allow_chrom_split)
+                                                               )
         features_to_remap, feature_locations = check_homologues(lifted_feature_list, features_to_check,
                                                                 feature_hierarchy.parents,
                                                                 ref_parent_order, max_overlap)
@@ -164,28 +160,19 @@ def resolve_overlapping_homologues(all_aligned_segs, lifted_feature_list, featur
     return lifted_feature_list
 
 
-def remove_features_and_get_alignments(features_to_remap, lifted_feature_list,
-                                       all_aligned_segs):
+def remove_features_and_get_alignments(features_to_remap, lifted_feature_list, all_aligned_segs):
     aligned_segs_for_remap = {}
-
-    keys_to_remove = [key for key in lifted_feature_list if
-                          liftoff_utils.remove_frag_tag(key) in features_to_remap]
-
-    for key in keys_to_remove:
-        del lifted_feature_list[key]
-        aligned_segs_for_remap[liftoff_utils.remove_frag_tag(key)] = all_aligned_segs[liftoff_utils.remove_frag_tag(key)]
+    for feature_to_remap in features_to_remap:
+        del lifted_feature_list[feature_to_remap]
+        aligned_segs_for_remap[feature_to_remap] = all_aligned_segs[feature_to_remap]
     return aligned_segs_for_remap
 
 
-def get_successfully_remapped_features(lifted_feature_list, features_to_remap, allow_chrom_split):
+def get_successfully_remapped_features(lifted_feature_list, features_to_remap):
     successfully_remapped_features = {}
     for feature_to_remap in features_to_remap:
-        if allow_chrom_split:
-            remapped_keys = [key for key in lifted_feature_list if liftoff_utils.remove_frag_tag(key) == feature_to_remap]
-        else:
-            remapped_keys = [key for key in lifted_feature_list if key == feature_to_remap + "_frag0"]
-        for key in remapped_keys:
-            successfully_remapped_features[key] = lifted_feature_list[key]
+        if feature_to_remap in lifted_feature_list:
+            successfully_remapped_features[feature_to_remap] = lifted_feature_list[feature_to_remap]
     return successfully_remapped_features
 
 

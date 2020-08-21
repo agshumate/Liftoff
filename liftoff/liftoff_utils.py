@@ -1,5 +1,4 @@
 import numpy as np
-import interlap
 
 
 def count_overlap(start1, end1, start2, end2):
@@ -53,17 +52,13 @@ def find_parent_order(parents):
 def convert_id_to_original(id):
     frag_split = id.split("_frag")[0]
     copy_tag_len = len(frag_split.split("_")[-1])
-    original_parent_name = frag_split[:-copy_tag_len-1]
+    original_parent_name = frag_split[:-copy_tag_len - 1]
     return original_parent_name
-
-
-def remove_frag_tag(id):
-    return id.split("_frag")[0]
 
 
 def get_copy_tag(id):
     copy_tag_len = len(id.split("_")[-1])
-    copy_tag = id[-copy_tag_len-1:]
+    copy_tag = id[-copy_tag_len - 1:]
     return copy_tag
 
 
@@ -77,19 +72,25 @@ def get_strand(aln, parent):
         strand = parent.strand
     return strand
 
-def find_overlaps(start, end, chrm, strand, feature_name, intervals, parent_dict, lifted_features_list, max_overlap):
+
+def find_overlaps(start, end, chrm, strand, feature_name, intervals, parent_dict, lifted_features_list,
+                  max_overlap_non_copies):
     all_overlaps = intervals.find((start, end))
     incorrect_overlaps = []
     filtered_overlaps = [overlap for overlap in all_overlaps if
                          overlap[2][1].seqid == chrm and overlap[2][1].strand == strand]
 
     for overlap in filtered_overlaps:
-        shortest_feature_length = min(end-start, overlap[1]-overlap[0])
+        shortest_feature_length = min(end - start, overlap[1] - overlap[0])
         overlap_amount = count_overlap(start, end, overlap[0], overlap[1])
         ref_feature = parent_dict[convert_id_to_original(feature_name)]
         ref_overlap_feature = parent_dict[convert_id_to_original(overlap[2][0])]
+        if get_copy_tag(feature_name) != '0' or get_copy_tag(overlap[2][0]) != '0':
+            max_overlap = 0
+        else:
+            max_overlap = max_overlap_non_copies
         if overlaps_in_ref_annotation(ref_feature, ref_overlap_feature) is False and overlap[2][0] in \
-                lifted_features_list and overlap_amount/shortest_feature_length > max_overlap:
+                lifted_features_list and overlap_amount / shortest_feature_length > max_overlap:
             incorrect_overlaps.append(overlap)
     return incorrect_overlaps
 
@@ -103,8 +104,8 @@ def overlaps_in_ref_annotation(ref_feature1, ref_feature2):
         return False
     else:
         return count_overlap(ref_feature1.start, ref_feature1.end,
-                                           ref_feature2.start,
-                                           ref_feature2.end) > 0
+                             ref_feature2.start,
+                             ref_feature2.end) > 0
 
 
 def find_nonoverlapping_upstream_neighbor(parent_order, feature_name):
@@ -117,4 +118,3 @@ def find_nonoverlapping_upstream_neighbor(parent_order, feature_name):
         return None
     else:
         return neighbor_id
-
