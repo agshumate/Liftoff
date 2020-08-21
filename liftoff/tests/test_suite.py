@@ -25,7 +25,7 @@ def test_yeast(tmp_path):
     expunmapped = 'liftoff/tests/Scer-to-Seub_unmapped.txt'
 
     # run the program
-    args = ['-t', target, '-r', asmbl, '-g', annot, '-o', output, '-u', unmapped, '-dir', tempdir]
+    args = ['-g', annot, '-o', output, '-u', unmapped, '-dir', tempdir, target, asmbl]
     liftoff.run_liftoff.main(args)
 
     # verify the output
