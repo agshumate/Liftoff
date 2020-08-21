@@ -86,7 +86,7 @@ def parse_args(arglist=None):
     aligngrp.add_argument('-overlap', default=0.1, metavar='O', help="maximum fraction of overlap allowed by 2 "
                                                                "features", type=float)
 
-    parser.add_argument('-V', '--version', help='show program version', action='version', version='v1.3.0')
+    parser.add_argument('-V', '--version', help='show program version', action='version', version='v1.4.0')
     parser.add_argument(
         '-p', default=1, type=int, metavar='P', help='use P parallel processes to accelerate alignment; by default P=1'
     )
