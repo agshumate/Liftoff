@@ -48,7 +48,7 @@ def build_parent_dict(child_features, parent_dict, final_parent):
     parent_child_dict = {}
     for child in child_features:
         if child.id not in parent_dict:
-            child.attributes["extra_copy_number"]=final_parent.attributes["extra_copy_number"][0]
+            child.attributes["extra_copy_number"] = final_parent.attributes["extra_copy_number"][0]
             if child.attributes["Parent"][0] in parent_child_dict:
                 parent_child_dict[child.attributes["Parent"][0]].append(child)
             else:

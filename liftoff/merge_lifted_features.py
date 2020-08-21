@@ -1,7 +1,6 @@
 from liftoff import liftoff_utils, new_feature
 
 
-
 def merge_lifted_features(mapped_children, parent, unmapped_features, aln_cov_threshold, copy_id, feature_order,
                           feature_hierarchy, aln_cov, seq_id, seq_id_threshold):
     feature_list, final_features = {}, []
@@ -9,7 +8,7 @@ def merge_lifted_features(mapped_children, parent, unmapped_features, aln_cov_th
     top_target_feature = None
     if len(mapped_children) == 0:
         unmapped_features.append(parent)
-        return [], 0
+        return []
     for child_name in mapped_children:
         child_feature = mapped_children[child_name]
         feature_list[child_feature.id] = child_feature
@@ -22,7 +21,7 @@ def merge_lifted_features(mapped_children, parent, unmapped_features, aln_cov_th
     final_features = process_final_features_list(feature_list, top_target_feature, seq_id, seq_id_threshold, aln_cov,
                                                  aln_cov_threshold,
                                                  unmapped_features, parent, feature_order, copy_id)
-    return final_features, top_target_feature.start
+    return final_features
 
 
 def is_top_parent(child, parent):

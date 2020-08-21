@@ -2,6 +2,7 @@ import gffutils
 from pyfaidx import Fasta, Faidx
 from liftoff import liftoff_utils, feature_hierarchy
 import os
+import sys
 
 
 def extract_features_to_lift(ref_chroms, liftover_type, parents_to_lift, args):
@@ -121,7 +122,10 @@ def get_gene_sequences(parent_dict, ref_chroms, args, liftover_type):
     for chrom in ref_chroms:
         fasta_out = get_fasta_out(chrom, args.r, liftover_type, args.dir)
         sorted_parents = sorted(list(parent_dict.values()), key=lambda x: x.seqid)
-        write_gene_sequences_to_file(chrom, args.r, fai, sorted_parents, fasta_out)
+        if len(sorted_parents) == 0:
+            sys.exit(
+                "GFF does not contain any gene features. Use -f to provide a list of other feature types to lift over.")
+        write_gene_sequences_to_file(chrom, args.r, fai, sorted_parents, fasta_out, args)
         fasta_out.close()
 
 
@@ -141,7 +145,7 @@ def get_fasta_out(chrom_name, reference_fasta_name, liftover_type, inter_files):
     return fasta_out
 
 
-def write_gene_sequences_to_file(chrom_name, reference_fasta_name, reference_fasta_idx, parents, fasta_out):
+def write_gene_sequences_to_file(chrom_name, reference_fasta_name, reference_fasta_idx, parents, fasta_out, args):
     if chrom_name == reference_fasta_name:
         current_chrom = parents[0].seqid
     else:
@@ -152,5 +156,8 @@ def write_gene_sequences_to_file(chrom_name, reference_fasta_name, reference_fas
             current_chrom = parent.seqid
             chrom_seq = reference_fasta_idx[current_chrom]
         if parent.seqid == chrom_name or chrom_name == reference_fasta_name:
+            gene_length = parent.end - parent.start + 1
+            parent.start = round(max(1, parent.start - args.flank * gene_length))
+            parent.end = round(min(parent.end + args.flank * gene_length, len(chrom_seq) - 1))
             parent_seq = chrom_seq[parent.start - 1: parent.end].seq
             fasta_out.write(">" + parent.id + "\n" + str(parent_seq) + "\n")
