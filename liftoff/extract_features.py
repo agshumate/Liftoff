@@ -125,7 +125,7 @@ def get_gene_sequences(parent_dict, ref_chroms, args, liftover_type):
         if len(sorted_parents) == 0:
             sys.exit(
                 "GFF does not contain any gene features. Use -f to provide a list of other feature types to lift over.")
-        write_gene_sequences_to_file(chrom, args.reference, fai, sorted_parents, fasta_out)
+        write_gene_sequences_to_file(chrom, args.reference, fai, sorted_parents, fasta_out, args)
         fasta_out.close()
 
 
