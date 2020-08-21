@@ -81,10 +81,9 @@ def parse_args(arglist=None):
     )
     aligngrp.add_argument(
         '-flank', default=0, metavar='F', type=float, help="amount of flanking sequence to align as a "
-        "percentage of gene length. This can improve gene alignment where gene structure  differs between target and "
-                                                         "reference")
-    aligngrp.add_argument('-overlap', default=0.1, metavar='O', help="maximum fraction of overlap allowed by 2 "
-                                                               "features", type=float)
+        "fraction [0.0-1.0] of gene length. This can improve gene alignment where gene structure  differs between "
+                                                           "target and "
+                                                         "reference; by default F=0.0")
 
     parser.add_argument('-V', '--version', help='show program version', action='version', version='v1.4.0')
     parser.add_argument(
@@ -115,6 +114,8 @@ def parse_args(arglist=None):
         help='with -copies, minimum sequence identity in exons/CDS for which a gene is considered '
         'a copy; must be greater than -s; default is 1.0',
     )
+    parser.add_argument('-overlap', default=0.1, metavar='O', help="maximum fraction [0.0-1.0] of overlap allowed by 2 "
+                                                               "features; by default O=0.1", type=float)
     parser._positionals.title = 'Required input (sequences)'
     parser._optionals.title = 'Miscellaneous settings'
     parser._action_groups = [parser._positionals, refrgrp, outgrp, aligngrp, parser._optionals]
