@@ -2,8 +2,8 @@ from liftoff import write_new_gff, liftover_types
 import argparse
 
 
-def main():
-    args = parse_args()
+def main(arglist=None):
+    args = parse_args(arglist)
     if args.chroms is not None:
         ref_chroms, target_chroms = parse_chrm_files(args.chroms)
     else:
@@ -25,7 +25,7 @@ def main():
     write_new_gff.write_new_gff(lifted_feature_list, feature_hierarchy.parents, args)
 
 
-def parse_args():
+def parse_args(arglist=None):
     parser = argparse.ArgumentParser(description='Lift features from one genome assembly to another')
     parser.add_argument('target', help='target fasta genome to lift genes to')
     parser.add_argument('reference', help='reference fasta genome to lift genes from')
