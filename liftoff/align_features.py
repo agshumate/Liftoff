@@ -11,7 +11,7 @@ from os import path
 
 def align_features_to_target(ref_chroms, target_chroms, args, feature_hierarchy, liftover_type, unmapped_features):
     print("aligning features")
-    target_fasta_dict = split_target_sequence(target_chroms, args.t, args.dir)
+    target_fasta_dict = split_target_sequence(target_chroms, args.target, args.dir)
     genome_size = get_genome_size(target_fasta_dict)
     threads_per_alignment = max(1, math.floor(int(args.p) / len(ref_chroms)))
     sam_files = []
@@ -66,7 +66,7 @@ def align_single_chroms(ref_chroms, target_chroms, threads, args, genome_size, l
 
 
 def get_features_file(ref_chroms, args, liftover_type, index):
-    if ref_chroms[index] == args.r and (liftover_type == "chrm_by_chrm" or liftover_type == "copies"):
+    if ref_chroms[index] == args.reference and (liftover_type == "chrm_by_chrm" or liftover_type == "copies"):
         features_name = 'reference_all'
     elif liftover_type == "unmapped":
         features_name = "unmapped_to_expected_chrom"
@@ -78,8 +78,8 @@ def get_features_file(ref_chroms, args, liftover_type, index):
 
 
 def get_target_file_and_output_file(liftover_type, target_chroms, index, features_name, args):
-    if liftover_type != "chrm_by_chrm" or target_chroms[0] == args.t:
-        target_file = args.t
+    if liftover_type != "chrm_by_chrm" or target_chroms[0] == args.target:
+        target_file = args.target
         out_file_target = "target_all"
     else:
         target_file = args.dir + "/" + target_chroms[index] + ".fa"
@@ -97,7 +97,7 @@ def get_minimap_path(args):
 
 
 def get_target_prefix_name(target_chroms, index, args, liftover_type):
-    if liftover_type != "chrm_by_chrm" or target_chroms[0] == args.t:
+    if liftover_type != "chrm_by_chrm" or target_chroms[0] == args.target:
         prefix = "target_all"
     else:
         prefix = target_chroms[index]

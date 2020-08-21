@@ -116,16 +116,16 @@ def add_intermediates(intermediate_types, intermediate_dict, feature_db):
 
 
 def get_gene_sequences(parent_dict, ref_chroms, args, liftover_type):
-    fai = Fasta(args.r)
+    fai = Fasta(args.reference)
     if liftover_type == "unplaced":
         open(args.dir + "/unplaced_genes.fa", 'w')
     for chrom in ref_chroms:
-        fasta_out = get_fasta_out(chrom, args.r, liftover_type, args.dir)
+        fasta_out = get_fasta_out(chrom, args.reference, liftover_type, args.dir)
         sorted_parents = sorted(list(parent_dict.values()), key=lambda x: x.seqid)
         if len(sorted_parents) == 0:
             sys.exit(
                 "GFF does not contain any gene features. Use -f to provide a list of other feature types to lift over.")
-        write_gene_sequences_to_file(chrom, args.r, fai, sorted_parents, fasta_out, args)
+        write_gene_sequences_to_file(chrom, args.reference, fai, sorted_parents, fasta_out)
         fasta_out.close()
 
 
