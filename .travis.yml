@@ -1,6 +1,4 @@
 language: python
-python:
- - 3.6
 install:
 - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
 - bash miniconda.sh -b -p $HOME/miniconda
@@ -10,7 +8,7 @@ install:
 - conda update -q conda
 - conda info -a
 - conda create -q -n test-env python=$TRAVIS_PYTHON_VERSION
-- conda activate test-env
+- source activate test-env
 - conda install -c bioconda liftoff
 script: pytest
 
