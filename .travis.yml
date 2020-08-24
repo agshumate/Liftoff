@@ -11,7 +11,6 @@ before_install:
 - source activate test-env
 - conda install -c bioconda minimap2
 install: 
-- export PYTHONPATH=$PYTHONPATH:$(pwd)
 - python setup.py install
 script: pytest
 
