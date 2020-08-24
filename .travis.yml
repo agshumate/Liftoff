@@ -1,8 +1,6 @@
 language: python
 python:
- - 3.6
- - 3.7
- - 3.8
-install: python setup.py install
+ - 3.6.5 
+install: conda install -c bioconda liftoff
 script: pytest
 
