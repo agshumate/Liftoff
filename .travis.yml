@@ -10,7 +10,7 @@ install:
 - conda update -q conda
 - conda info -a
 - conda create -q -n test-env python=$TRAVIS_PYTHON_VERSION
-- source activate test-env
+- conda activate test-env
 - conda install -c bioconda liftoff
 script: pytest
 
