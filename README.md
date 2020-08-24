@@ -1,4 +1,5 @@
 # Liftoff
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/liftoff/badges/downloads.svg)](https://anaconda.org/bioconda/liftoff)
 
 ## Overview
 Here we introduce Liftoff, an accurate tool that maps annotations in GFF or GTF between assemblies of the same, or closely-related species. Unlike current coordinate lift-over tools which require a pre-generated “chain” file as input, Liftoff is a standalone tool that takes two genome assemblies and a reference annotation as input and outputs an annotation of the target genome. Liftoff uses Minimap2 [(Li, 2018)](https://academic.oup.com/bioinformatics/article/34/18/3094/4994778) to align the gene sequences from a reference genome to the target genome. Rather than aligning whole genomes, aligning only the gene sequences allows genes to be lifted over even if there are many structural differences between the two genomes. For each gene, Liftoff finds the alignments of the exons that maximize sequence identity while preserving the transcript and gene structure.  If two genes incorrectly map to overlapping loci, Liftoff determines which gene is most-likely mis-mapped, and attempts to re-map it. Liftoff can also find additional gene copies present in the target assembly that are not annotated in the reference. 
@@ -9,26 +10,25 @@ Here we introduce Liftoff, an accurate tool that maps annotations in GFF or GTF 
 
 ### Getting Started
 
-#### Step 1:
-Liftoff requires Python3 and also depends on Minimap2. Minimap2 which can be installed by following instructions [here](https://github.com/lh3/minimap2/releases/tag/v2.17). It can also be installed with conda with the following command
+#### INSTALLATION
+
+The easiest way to install Liftoff is with the [conda package manager](https://docs.conda.io/en/latest/).
 
 ```
-conda install -c bioconda minimap2
+conda install -c bioconda liftoff
 ```
-Add minimap2 is in your path after installation or use the -m argument when running Liftoff to specficy a different path 
 
+If you don't have conda installed, you need to install Minimap2 (following instructions [here](https://github.com/lh3/minimap2/releases/tag/v2.17)) and Liftoff from source or with pip.
 
-#### Step 2: 
-The easiest way to install Liftoff is with pip 
-```
-pip install Liftoff
-```
-Or you can install it from source with the following steps
 ```
 git clone https://github.com/agshumate/Liftoff liftoff 
 cd liftoff
 python setup.py install
 ```
+```
+pip install Liftoff
+```
+
 
 ### USAGE
 ```
