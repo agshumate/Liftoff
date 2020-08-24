@@ -1,6 +1,6 @@
 # Liftoff
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/liftoff?style=plastic)
-![Conda](https://img.shields.io/conda/dn/bioconda/liftoff?label=bioconda-install&style=plastic)
+![Conda](https://img.shields.io/conda/dn/bioconda/liftoff?label=bioconda-install&style=plastic)(https://anaconda.org/bioconda/liftoff)
 ![Travis (.org)](https://img.shields.io/travis/agshumate/liftoff?style=plastic)
 
 ## Overview
