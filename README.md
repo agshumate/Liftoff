@@ -35,9 +35,11 @@ pip install Liftoff
 ### USAGE
 ```
 usage: liftoff [-h] (-g GFF | -db DB) [-o FILE] [-u FILE] [-exclude_partial]
-               [-dir DIR] [-a A] [-s S] [-n N] [-d D] [-V] [-p P] [-m PATH]
-               [-f TYPES] [-infer_genes] [-infer_transcripts] [-chroms TXT]
-               [-unplaced TXT] [-copies] [-sc SC]
+               [-dir DIR] [-mm2_options =STR] [-a A] [-s S] [-d D] [-flank F]
+               [-V] [-p P] [-m PATH] [-f TYPES] [-infer_genes]
+               [-infer_transcripts] [-chroms TXT] [-unplaced TXT] [-copies]
+               [-sc SC] [-overlap O] [-mismatch M] [-gap_open GO]
+               [-gap_extend GE]
                target reference
 
 Lift features from one genome assembly to another
@@ -64,14 +66,14 @@ Output:
   -dir DIR            name of directory to save intermediate fasta and SAM
                       files; default is "intermediate_files"
 
-Alignment filtering:
+Alignments:
+  -mm2_options =STR   space delimited minimap2 parameters. By default ="-a
+                      --end-bonus 5 --eqx -N 50 -p 0.5"
   -a A                designate a feature mapped only if it aligns with
                       coverage ≥A; by default A=0.5
   -s S                designate a feature mapped only if its child features
                       (usually exons/CDS) align with sequence identity ≥S; by
                       default S=0.5
-  -n N                consider at most N Minimap2 alignments for each feature;
-                      by default N=50
   -d D                distance scaling factor; alignment nodes separated by
                       more than a factor of D in the target genome will not be
                       connected in the graph; by default D=2.0
@@ -83,10 +85,10 @@ Alignment filtering:
 Miscellaneous settings:
   -h, --help          show this help message and exit
   -V, --version       show program version
-  -p P                use P parallel processes to accelerate alignment; by
-                      default P=1
+  -p P                use p parallel processes to accelerate alignment; by
+                      default p=1
   -m PATH             Minimap2 path
-  -f TYPES            a file listing the feature types to lift over
+  -f TYPES            list of feature types to lift over
   -infer_genes        use if annotation file only includes transcripts,
                       exon/CDS features
   -infer_transcripts  use if annotation file only includes exon/CDS features
@@ -102,15 +104,31 @@ Miscellaneous settings:
                       -s; default is 1.0
   -overlap O          maximum fraction [0.0-1.0] of overlap allowed by 2
                       features; by default O=0.1
+  -mismatch M         mismatch penalty in exons when finding best mapping; by
+                      default M=2
+  -gap_open GO        gap open penalty in exons when finding best mapping; by
+                      default GO=2
+  -gap_extend GE      gap extend penalty in exons when finding best mapping;
+                      by default GE=1
 ```
 ### Input and Output
-The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation or feature database. If an annotation file is provided with the -g argument, a feature database will be built automatically and can be used for future lift overs by providing the -db argument. The output is a gff file for the target genome and a file with the IDs of unmapped genes. 
+The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation or feature database. If an annotation file is provided with the -g argument, a feature database will be built automatically and can be used for future lift overs by providing the -db argument. The output is a file in the same format as the reference annotation (GFF3 or GTF) for the target genome and a file with the IDs of unmapped genes. 
 
 ### Feature Types
 By default, 'gene' features and all child features of genes (i.e. trancripts, mRNA, exons, CDS, UTRs) will be lifted over. The -f parameter can be used to specify a file containing a list of additional parent feature types you wish to lift-over. Note: feature IDs must be unique for every feature and may not contain spaces. 
 
 ### Sequence Identity and Alignment Coverage
 A gene will be considered mapped successfully if the alignment coverage and sequence identity in the child features (usually exons/CDS) is >= 50%. This can be changed with the -a and -s options. By default, genes that map below these thresholds will be included in the gff file with partial_mapping=True and low_identity=True in the last column. To exclude these partial/low identity mappings from the final GFF use -exclude_partial, and these genes will instead be written to the unmapped_features.txt file. The sequence identity and alignment coverage is reported in the final column of the output GFF for feach gene. 
+
+### Minimap2 parameters
+By default liftoff uses the following parameters for the minimap2 alignments -a --eqx --end-bonus 5  -N 50 -p 0.5
+-a and --eqx specify that the output should be in SAM format with the cigar string including "=" for matches and "X" for mismatches (opposed to the default SAM format using 'M' for both). The -N and -p parameters specficied allow for more secondary alignments to be considered which is helpful in the resolution of multi-gene families. The --end-bonus parameter favors end-to-end alignments of the gene over soft clipping a mismatched base at the start or end of the alignment. For example if the stop codon of the reference gene is TAA and the stop codon of the target gene is TAG, without the end-bonus parameter, this alignment and subsequent annotation would be truncated by 1 base. 
+
+The user may wish to change the minimap2 parameters for their specific data. This can be done with the -mm2_options parameter with a string of options to add/change preceeded by an "=" sign. The "=" is important as it distinguishes minimap2 parameters from liftoff parameters with the same flag. For more divergent species in particular, the -r and -z parameters may improve results (see Minimap2 documentation for more details). An example of changing these with -mm2_options would be 
+
+```
+-mm2_options="-r 2k -z 5000"
+```
 
 ### Gene Structure in Cross-Species Lift-over
 Liftoff works best when the gene structure (i.e intron size) is similar in the reference and target genomes. When genes differ significantly in size, the alignments are more fragmented and often small exons at the beginning or end of the gene are not aligned. Adding and aligning some percentage of flanking sequence to the gene with the -flank option can improve this in some cases. Additionally increasing the -d parameter will allow mappings where the genes are much larger in the target genome than in the reference. 
