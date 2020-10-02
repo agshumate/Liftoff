@@ -7,6 +7,7 @@ def fix_incorrectly_overlapping_features(all_lifted_features, features_to_check,
                                          unmapped_features, threshold, feature_hierarchy, feature_db,
                                          ref_parent_order, seq_id_threshold, distance_factor,
                                          max_overlap):
+
     features_to_remap, feature_locations = check_homologues(all_lifted_features, features_to_check,
                                                             feature_hierarchy.parents,
                                                             ref_parent_order, max_overlap)

@@ -22,7 +22,7 @@ def align_features_to_target(ref_chroms, target_chroms, args, feature_hierarchy,
         sam_files.append(result)
     pool.close()
     pool.join()
-    return parse_all_sam_files(feature_hierarchy, unmapped_features, liftover_type, args.n, sam_files)
+    return parse_all_sam_files(feature_hierarchy, unmapped_features, liftover_type, sam_files)
 
 
 def split_target_sequence(target_chroms, target_fasta_name, inter_files):
@@ -51,17 +51,14 @@ def align_single_chroms(ref_chroms, target_chroms, threads, args, genome_size, l
     target_prefix = get_target_prefix_name(target_chroms, index, args, liftover_type)
     if genome_size > max_single_index_size:
         split_prefix = args.dir + "/" + features_name + "_to_" + target_prefix + "_split"
-        subprocess.run(
-            [minimap2_path, '-o', output_file, target_file, features_file, '-a', '--eqx', '-N', str(args.n), '-p',
-             '0.5', '-t', threads_arg, "--split-prefix", split_prefix, '--end-bonus', '5'],
-        )
+        command = [minimap2_path, '-o', output_file, target_file, features_file] + args.mm2_options.split(" ") + [
+            "--split-prefix", split_prefix, '-t', threads_arg]
+        subprocess.run(command)
     else:
         minimap2_index = build_minimap2_index(target_file, args, threads_arg, minimap2_path)
-        subprocess.run(
-            [minimap2_path, '-o', output_file, minimap2_index, features_file, '-a', '--eqx', '-N', str(args.n), '-p',
-             '0.5', '-t', \
-             threads_arg, \
-             '--end-bonus', '5', ])
+        command = [minimap2_path, '-o', output_file, minimap2_index, features_file] + args.mm2_options.split(" ") + [
+            '-t', threads_arg]
+        subprocess.run(command)
     return output_file
 
 
@@ -107,20 +104,20 @@ def get_target_prefix_name(target_chroms, index, args, liftover_type):
 def build_minimap2_index(target_file, args, threads, minimap2_path):
     if path.exists(target_file + ".mmi") is False:
         subprocess.run(
-            [minimap2_path, '-d', target_file + ".mmi", target_file, '-a', '-N', str(args.n), '-p', '0.5', '-t',
-             threads])
+            [minimap2_path, '-d', target_file + ".mmi", target_file] + args.mm2_options.split(" ") + ['-t',
+             threads ])
     return target_file + ".mmi"
 
 
-def parse_all_sam_files(feature_hierarchy, unmapped_features, liftover_type, max_alns, sam_files):
+def parse_all_sam_files(feature_hierarchy, unmapped_features, liftover_type, sam_files):
     aligned_segments_dict = {}
     for file in sam_files:
-        aligned_segments = parse_alignment(file, feature_hierarchy, unmapped_features, liftover_type, max_alns)
+        aligned_segments = parse_alignment(file, feature_hierarchy, unmapped_features, liftover_type)
         aligned_segments_dict.update(aligned_segments)
     return aligned_segments_dict
 
 
-def parse_alignment(file, feature_hierarchy, unmapped_features, search_type, max_alns):
+def parse_alignment(file, feature_hierarchy, unmapped_features, search_type):
     all_aligned_blocks = {}
     sam_file = pysam.AlignmentFile(file, 'r', check_sq=False, check_header=False)
     sam_file_iter = sam_file.fetch()
@@ -129,7 +126,7 @@ def parse_alignment(file, feature_hierarchy, unmapped_features, search_type, max
     align_count_dict = {}
     for ref_seq in sam_file_iter:
         if ref_seq.is_unmapped is False:
-            aln_id = add_alignment(ref_seq, max_alns, align_count_dict, search_type, name_dict, aln_id,
+            aln_id = add_alignment(ref_seq,  align_count_dict, search_type, name_dict, aln_id,
                                    feature_hierarchy, all_aligned_blocks)
         else:
             unmapped_features.append(feature_hierarchy.parents[ref_seq.query_name])
@@ -137,7 +134,7 @@ def parse_alignment(file, feature_hierarchy, unmapped_features, search_type, max
     return all_aligned_blocks
 
 
-def add_alignment(ref_seq, max_alns, align_count_dict, search_type, name_dict, aln_id, feature_hierarchy,
+def add_alignment(ref_seq, align_count_dict, search_type, name_dict, aln_id, feature_hierarchy,
                   all_aligned_blocks):
     ref_seq.query_name = edit_name(search_type, ref_seq, name_dict)
     aln_id += 1
@@ -146,12 +143,11 @@ def add_alignment(ref_seq, max_alns, align_count_dict, search_type, name_dict, a
     else:
         align_count = 0
     align_count_dict[ref_seq.query_name] = align_count
-    if align_count < max_alns:
-        aligned_blocks = get_aligned_blocks(ref_seq, aln_id, feature_hierarchy, search_type)
-        if ref_seq.query_name in all_aligned_blocks:
-            all_aligned_blocks[ref_seq.query_name].extend(aligned_blocks)
-        else:
-            all_aligned_blocks[ref_seq.query_name] = aligned_blocks
+    aligned_blocks = get_aligned_blocks(ref_seq, aln_id, feature_hierarchy, search_type)
+    if ref_seq.query_name in all_aligned_blocks:
+        all_aligned_blocks[ref_seq.query_name].extend(aligned_blocks)
+    else:
+        all_aligned_blocks[ref_seq.query_name] = aligned_blocks
     return aln_id
 
 

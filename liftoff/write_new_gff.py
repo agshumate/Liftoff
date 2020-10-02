@@ -1,11 +1,12 @@
 from liftoff import liftoff_utils
 
 
-def write_new_gff(lifted_features, parents_dict, args):
+def write_new_gff(lifted_features, parents_dict, args, feature_db):
     if args.o != 'stdout':
         f = open(args.o, 'w')
     else:
         f = "stdout"
+    out_type = feature_db.dialect['fmt']
     parents = liftoff_utils.get_parent_list(lifted_features)
     parents.sort(key=lambda x: x.id)
     final_parent_list = finalize_parent_features(parents, args)
@@ -13,7 +14,7 @@ def write_new_gff(lifted_features, parents_dict, args):
     for final_parent in final_parent_list:
         child_features = lifted_features[final_parent.attributes["copy_id"][0]]
         parent_child_dict = build_parent_dict(child_features, parents_dict, final_parent)
-        write_feature([final_parent], f, child_features, parent_child_dict)
+        write_feature([final_parent], f, child_features, parent_child_dict, out_type)
 
 
 def finalize_parent_features(parents, args):
@@ -56,17 +57,20 @@ def build_parent_dict(child_features, parent_dict, final_parent):
     return parent_child_dict
 
 
-def write_feature(children, outfile, child_features, parent_dict):
+def write_feature(children, outfile, child_features, parent_dict, output_type):
     for child in children:
-        write_line(child, outfile)
+        write_line(child, outfile, output_type)
         if child.id in parent_dict:
             new_children = parent_dict[child.id]
-            write_feature(new_children, outfile, child_features, parent_dict)
+            write_feature(new_children, outfile, child_features, parent_dict, output_type)
     return
 
 
-def write_line(feature, out_file):
-    line = make_gff_line(feature)
+def write_line(feature, out_file, output_type):
+    if output_type == 'gff3':
+        line = make_gff_line(feature)
+    else:
+        line = make_gtf_line(feature)
     if out_file == "stdout":
         print(line)
     else:
@@ -84,3 +88,16 @@ def make_gff_line(feature):
             attributes_str += (attr + "=" + value_str[:-1] + ";")
     return feature.seqid + "\t" + feature.source + "\t" + feature.featuretype + "\t" + str(feature.start) + \
            "\t" + str(feature.end) + "\t" + "." + "\t" + feature.strand + "\t" + "." + "\t" + attributes_str[:-1]
+
+
+def make_gtf_line(feature):
+    attributes_str = ""
+    for attr in feature.attributes:
+        if attr != "copy_id":
+            if len(feature.attributes[attr]) >0:
+                value_str = ""
+                for value in feature.attributes[attr]:
+                     value_str += value + ","
+                attributes_str += (attr + " " + '"' + value_str[:-1] + '"' + "; ")
+    return feature.seqid + "\t" + feature.source + "\t" + feature.featuretype + "\t" + str(feature.start) + \
+           "\t" + str(feature.end) + "\t" + "." + "\t" + feature.strand + "\t" + "." + "\t" + attributes_str

@@ -85,7 +85,7 @@ def find_overlaps(start, end, chrm, strand, feature_name, intervals, parent_dict
         overlap_amount = count_overlap(start, end, overlap[0], overlap[1])
         ref_feature = parent_dict[convert_id_to_original(feature_name)]
         ref_overlap_feature = parent_dict[convert_id_to_original(overlap[2][0])]
-        if get_copy_tag(feature_name) != '0' or get_copy_tag(overlap[2][0]) != '0':
+        if get_copy_tag(feature_name) != '_0' or get_copy_tag(overlap[2][0]) != '_0':
             max_overlap = 0
         else:
             max_overlap = max_overlap_non_copies

@@ -1,8 +1,13 @@
 import gffutils
 from pyfaidx import Fasta, Faidx
-from liftoff import liftoff_utils, feature_hierarchy
+from liftoff import liftoff_utils, feature_hierarchy, new_feature
 import os
 import sys
+import numpy as np
+import ujson as json
+
+
+
 
 
 def extract_features_to_lift(ref_chroms, liftover_type, parents_to_lift, args):
@@ -25,9 +30,13 @@ def create_feature_db_connections(args):
     else:
         disable_genes = True
     if args.db is None:
-        feature_db = gffutils.create_db(args.g, args.g + "_db", merge_strategy="create_unique", force=True,
+        try:
+            feature_db = gffutils.create_db(args.g, args.g + "_db", merge_strategy="create_unique", force=True,
                                         disable_infer_transcripts=disable_transcripts,
                                         disable_infer_genes=disable_genes, verbose=True)
+
+        except:
+            find_problem_line(args.g)
         feature_db_name = args.db
     else:
         feature_db = gffutils.FeatureDB(args.db)
@@ -35,84 +44,98 @@ def create_feature_db_connections(args):
     return feature_db, feature_db_name
 
 
+def find_problem_line(gff_file):
+    f = open(gff_file, 'r')
+    lines = f.readlines()
+    for i in range (len(lines)):
+        line = lines[i]
+        if line[0] != "#":
+            try:
+                gffutils.create_db(line, ":memory", from_string=True, force=True)
+            except:
+                sys.exit("ERROR:Incorrect GFF/GTF syntax on line " + str(i + 1))
+
+
 def seperate_parents_and_children(feature_db, parent_types_to_lift):
+    c = feature_db.conn.cursor()
+    relations = [list(feature) for feature in c.execute('''SELECT * FROM relations''') if feature[0] != feature[1]]
+    all_children_ids = [relation[1] for relation in relations]
+    all_parent_ids = [relation[0] for relation in relations]
+    all_ids = [list(feature)[0]for feature in c.execute('''SELECT * FROM features''')]
+    # for relation in relations:
+    #     if relation[2] == 1 and relation[1] in all_ids:
+    #         feature_db[relation[1]].attributes["Parent"] = [relation[0]]
+    lowest_children = np.setdiff1d(all_ids, all_parent_ids)
+    highest_parents = np.setdiff1d(all_ids, all_children_ids)
+    intermediates = (set(all_children_ids).intersection(set(all_parent_ids))).intersection(set(all_ids))
     parent_dict, child_dict, intermediate_dict = {}, {}, {}
-    feature_types = feature_db.featuretypes()
-    parent_types, child_types, intermediate_types = find_feature_type_hierarchy(feature_types, feature_db)
-    filtered_parents = [parent for parent in parent_types if parent in parent_types_to_lift]
-    for parent_type in filtered_parents:
-        for parent in feature_db.features_of_type(featuretype=parent_type):
-            add_parent(parent_dict, parent, child_dict)
-            add_children(child_types, parent, feature_db, child_dict)
-    add_intermediates(intermediate_types, intermediate_dict, feature_db)
+    add_parents(parent_dict, child_dict, highest_parents, parent_types_to_lift, feature_db)
+    add_children(parent_dict, child_dict, lowest_children, feature_db, relations)
+    add_intermediates(intermediates, intermediate_dict, feature_db, relations)
     parent_order = liftoff_utils.find_parent_order(
         [parent for parent in list(parent_dict.values()) if parent is not None])
     ref_feature_hierarchy = feature_hierarchy.feature_hierarchy(parent_dict, intermediate_dict, child_dict)
     return ref_feature_hierarchy, parent_order
 
 
-def find_feature_type_hierarchy(feature_types, feature_db):
-    parent_types, intermediate_types, child_types = [], [], []
-    for feature_type in feature_types:
-        for feature in feature_db.features_of_type(featuretype=feature_type):
-            is_child = has_child(feature, feature_db) is False
-            is_parent = has_parent(feature, feature_db) is False
-            if is_child:
-                child_types.append(feature_type)
-            if is_parent:
-                parent_types.append(feature_type)
-            if is_parent is False and is_child is False:
-                intermediate_types.append(feature_type)
-            break
-    return parent_types, child_types, intermediate_types
+def add_parents(parent_dict, child_dict, highest_parents, parent_types_to_lift, feature_db):
+    c = feature_db.conn.cursor()
+    query =  "select * from features where id IN {}".format(tuple(highest_parents))
+    for result in c.execute(query):
+        feature_tup = tuple(result)
+        parent = new_feature.new_feature(feature_tup[0], feature_tup[3], feature_tup[1], feature_tup[2],feature_tup[7],
+                                          feature_tup[4], feature_tup[5], json.loads(feature_tup[9]))
+        if parent.featuretype in parent_types_to_lift:
+            parent_dict[parent.id] = parent
+            child_dict[parent.id] = []
 
 
-def has_child(feature, feature_db):
-    for child in feature_db.children(feature.id):
-        return True
-    return False
-
-
-def has_parent(feature, feature_db):
-    for parent in feature_db.parents(feature.id, level=1):
-        if feature.id != parent.id:
-            return True
-    return False
-
-
-def add_parent(parent_dict, parent, child_dict):
-    parent_dict[parent.id] = parent
-    child_dict[parent.id] = []
-
-
-def add_children(child_types, parent, feature_db, child_dict):
-    for child_type in child_types:
-        for child in feature_db.children(parent, featuretype=child_type):
-            child_dict[parent.id].append(child)
+def add_children(parent_dict, child_dict, lowest_children, feature_db, relations):
+    c = feature_db.conn.cursor()
+    query = "select * from relations join features on features.id  = relations.child where relations.child IN {" \
+            "}".format(tuple(lowest_children))
+    results = c.execute(query)
+    for result in results:
+        feature_tup = tuple(result)
+        parent = feature_tup[0]
+        if parent in parent_dict:
+            child = new_feature.new_feature(feature_tup[3], feature_tup[6], feature_tup[4], feature_tup[5],
+                                            feature_tup[10],
+                                          feature_tup[7], feature_tup[8], json.loads(feature_tup[12]))
             if "Parent" not in child.attributes:
                 add_parent_tag(child, feature_db)
-    if len(child_dict[parent.id]) == 0:
-        child_dict[parent.id].append(parent)
+            child_dict[parent].append(child)
+    single_level_features = np.setdiff1d(lowest_children, child_dict.values())
+    for feature in single_level_features:
+        if feature in parent_dict:
+            child_dict[feature] = [parent_dict[feature]]
+
 
 
 def add_parent_tag(feature, feature_db):
     parent_id = ""
-    parents = list(feature_db.parents(feature, level=1))
+    parents = [parent for parent in feature_db.parents(feature.id, level=1) if feature.id != parent.id]
     if len(parents) > 0:
         parent_id = parents[0].id
     else:
-        parents = list(feature_db.parents(feature))
+        parents = [parent for parent in feature_db.parents(feature.id) if feature.id != parent.id]
         if len(parents) > 0:
             parent_id = parents[0].id
-    feature.attributes["Parent"] = parent_id
+    feature.attributes["Parent"] = [parent_id]
 
 
-def add_intermediates(intermediate_types, intermediate_dict, feature_db):
-    for intermediate_type in intermediate_types:
-        for intermediate_feature in feature_db.features_of_type(featuretype=intermediate_type):
-            intermediate_dict[intermediate_feature.id] = intermediate_feature
-            if "Parent" not in intermediate_feature.attributes:
-                add_parent_tag(intermediate_feature, feature_db)
+
+def add_intermediates(intermediate_ids, intermediate_dict, feature_db,relations):
+    c = feature_db.conn.cursor()
+    query =  "select * from features where id IN {}".format(tuple(intermediate_ids))
+    for result in c.execute(query):
+        feature_tup = tuple(result)
+        intermediate_feature = new_feature.new_feature(feature_tup[0], feature_tup[3], feature_tup[1], feature_tup[2],
+                                           feature_tup[7],
+                                          feature_tup[4], feature_tup[5], json.loads(feature_tup[9]))
+        intermediate_dict[intermediate_feature.id] = intermediate_feature
+        if "Parent" not in intermediate_feature.attributes:
+            add_parent_tag(intermediate_feature, feature_db)
 
 
 def get_gene_sequences(parent_dict, ref_chroms, args, liftover_type):

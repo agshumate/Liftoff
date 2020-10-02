@@ -15,6 +15,7 @@ def lift_original_annotation(ref_chroms, target_chroms, lifted_features_list, ar
                             feature_db,
                             feature_hierarchy.parents, lifted_features_list, ref_parent_order, min_cov, min_seqid,
                             args.overlap)
+
     return feature_db, feature_hierarchy, ref_parent_order
 
 
@@ -26,12 +27,13 @@ def align_and_lift_features(ref_chroms, target_chroms, args, feature_hierarchy, 
     print("lifting features")
     feature_locations = None
     lift_features.lift_all_features(aligned_segments, min_cov, feature_db, features_to_lift, feature_hierarchy,
-                                    unmapped_features, lifted_features_list, min_seqid, feature_locations, args.d,
+                                    unmapped_features, lifted_features_list, min_seqid, feature_locations, args,
                                     ref_parent_order)
+
     fix_overlapping_features.fix_incorrectly_overlapping_features(lifted_features_list, lifted_features_list,
                                                                   aligned_segments, unmapped_features,
                                                                   min_cov, feature_hierarchy,
-                                                                  feature_db, ref_parent_order, min_seqid, args.d,
+                                                                  feature_db, ref_parent_order, min_seqid, args,
                                                                    max_overlap)
 
 

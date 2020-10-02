@@ -2,6 +2,7 @@ from liftoff import write_new_gff, liftover_types
 import argparse
 
 
+
 def main(arglist=None):
     args = parse_args(arglist)
     if args.chroms is not None:
@@ -22,7 +23,7 @@ def main(arglist=None):
                                    ref_parent_order, args)
     write_unmapped_features_file(args.u, unmapped_features)
     map_extra_copies(args, lifted_feature_list, feature_hierarchy, feature_db, ref_parent_order)
-    write_new_gff.write_new_gff(lifted_feature_list, feature_hierarchy.parents, args)
+    write_new_gff.write_new_gff(lifted_feature_list, feature_hierarchy.parents, args, feature_db)
 
 
 def parse_args(arglist=None):
@@ -43,7 +44,7 @@ def parse_args(arglist=None):
     outgrp = parser.add_argument_group('Output')
     outgrp.add_argument(
         '-o', default='stdout', metavar='FILE',
-        help='write output to FILE in GFF3 format; by default, output is written to terminal (stdout)'
+        help='write output to FILE in same format as input; by default, output is written to terminal (stdout)'
     )
     outgrp.add_argument(
         '-u', default='unmapped_features.txt', metavar='FILE',
@@ -60,7 +61,11 @@ def parse_args(arglist=None):
         help='name of directory to save intermediate fasta and SAM files; default is "intermediate_files"',
     )
 
-    aligngrp = parser.add_argument_group('Alignment filtering')
+    aligngrp = parser.add_argument_group('Alignments')
+    aligngrp.add_argument('-mm2_options', metavar='=STR',  type=str, default='-a --end-bonus '
+                                                                                                     '5 --eqx -N 50 '
+                                                                             '-p 0.5',
+                          help='space delimited minimap2 parameters. By default ="-a --end-bonus 5 --eqx -N 50 -p 0.5"')
     aligngrp.add_argument(
         '-a', default=0.5, metavar='A', type=float,
         help='designate a feature mapped only if it aligns with coverage ≥A; by default A=0.5',
@@ -69,10 +74,6 @@ def parse_args(arglist=None):
         '-s', default=0.5, metavar='S', type=float,
         help='designate a feature mapped only if its child features (usually exons/CDS) align '
         'with sequence identity ≥S; by default S=0.5'
-    )
-    aligngrp.add_argument(
-        '-n', default=50, metavar='N', type=int,
-        help='consider at most N Minimap2 alignments for each feature; by default N=50'
     )
     aligngrp.add_argument(
         '-d', metavar='D', default=2.0, type=float,
@@ -85,9 +86,9 @@ def parse_args(arglist=None):
                                                            "target and "
                                                          "reference; by default F=0.0")
 
-    parser.add_argument('-V', '--version', help='show program version', action='version', version='v1.4.2')
+    parser.add_argument('-V', '--version', help='show program version', action='version', version='v1.5.0')
     parser.add_argument(
-        '-p', default=1, type=int, metavar='P', help='use P parallel processes to accelerate alignment; by default P=1'
+        '-p', default=1, type=int, metavar='P', help='use p parallel processes to accelerate alignment; by default p=1'
     )
     parser.add_argument('-m', help='Minimap2 path', metavar='PATH')
     parser.add_argument('-f', metavar='TYPES', help='list of feature types to lift over')
@@ -116,10 +117,26 @@ def parse_args(arglist=None):
     )
     parser.add_argument('-overlap', default=0.1, metavar='O', help="maximum fraction [0.0-1.0] of overlap allowed by 2 "
                                                                "features; by default O=0.1", type=float)
+    parser.add_argument('-mismatch', default=2, metavar='M', help="mismatch penalty in exons when finding best "
+                                                                  "mapping; by default M=2", type=int )
+    parser.add_argument('-gap_open', default=2, metavar='GO', help="gap open penalty in exons when finding best "
+                                                                   "mapping; by default GO=2", type=int)
+    parser.add_argument('-gap_extend', default=1, metavar='GE', help="gap extend penalty in exons when finding best "
+                                                                     "mapping; by default GE=1", type=int )
     parser._positionals.title = 'Required input (sequences)'
     parser._optionals.title = 'Miscellaneous settings'
     parser._action_groups = [parser._positionals, refrgrp, outgrp, aligngrp, parser._optionals]
     args = parser.parse_args(arglist)
+    if '-a' not in args.mm2_options:
+        args.mm2_options += ' -a'
+    if '--eqx' not in args.mm2_options:
+        args.mm2_options += ' --eqx'
+    if '-N' not in args.mm2_options:
+        args.mm2_options += " -N 50"
+    if '-p' not in args.mm2_options:
+        args.mm2_options += " -p 0.5"
+    if '--end-bonus' not in args.mm2_options:
+        args.mm2_options += "--end-bonus 5"
     if (float(args.s) > float(args.sc)):
         parser.error("-sc must be greater than or equal to -s")
     if (args.chroms is None and args.unplaced is not None):

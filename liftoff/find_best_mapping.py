@@ -5,20 +5,19 @@ import numpy as np
 
 def find_best_mapping(alignments, query_length, parent, feature_heirarchy, previous_feature_start,
                       previous_feature_ref_start, previous_gene_seq,
-                      inter,
-                      lifted_features_list, distance_factor):
+                      inter,lifted_features_list, args):
     children = feature_heirarchy.children[parent.id]
     children_coords = liftoff_utils.merge_children_intervals(children)
     node_dict, aln_graph = intialize_graph()
     head_nodes = add_single_alignments(node_dict, aln_graph, alignments, children_coords, parent,
                                        previous_feature_start, previous_feature_ref_start, previous_gene_seq, inter,
                                        feature_heirarchy.parents,
-                                       lifted_features_list)
+                                       lifted_features_list, args)
 
     chain_alignments(head_nodes, node_dict, aln_graph, parent, children_coords, inter,
-                     feature_heirarchy.parents, lifted_features_list, distance_factor,
+                     feature_heirarchy.parents, lifted_features_list, args,
                      )
-    add_target_node(aln_graph, node_dict, query_length, children_coords, parent)
+    add_target_node(aln_graph, node_dict, query_length, children_coords, parent, args)
     shortest_path_nodes = find_shortest_path(node_dict, aln_graph)
     if len(shortest_path_nodes) == 0:
         return {}, 0, 0
@@ -36,12 +35,14 @@ def intialize_graph():
 
 def add_single_alignments(node_dict, aln_graph, alignments, children_coords, parent,
                           previous_feature_start, previous_feature_ref_start, previous_gene_seq, inter, parent_dict,
-                          lifted_features_list,
+                          lifted_features_list, args
                           ):
     if inter is not None:
         alignments = remove_alignments_with_overlap(alignments, inter, parent, parent_dict, lifted_features_list)
+    alignments.sort(key=lambda x: x.query_block_start)
     alignments = sort_alignments(parent, previous_feature_start, previous_feature_ref_start, previous_gene_seq,
                                  alignments)
+
     node_num = 1
     previous_node_id = -1
     head_nodes = []
@@ -54,7 +55,8 @@ def add_single_alignments(node_dict, aln_graph, alignments, children_coords, par
                               lifted_features_list):
             if previous_node == 0:
                 head_nodes.append(node_num)
-            current_node = add_to_graph(aln_graph, node_num, children_coords, parent, node_dict, previous_node, aln)
+            current_node = add_to_graph(aln_graph, node_num, children_coords, parent, node_dict, previous_node, aln,
+                                        args)
             previous_node = current_node
             node_num += 1
     return head_nodes
@@ -146,27 +148,27 @@ def get_node_overlap(from_node, to_node):
         return max(0, from_node.query_block_end - to_node.query_block_start + 1)
 
 
-def add_to_graph(aln_graph, node_num, children_coords, parent, node_dict, previous_node, aln):
+def add_to_graph(aln_graph, node_num, children_coords, parent, node_dict, previous_node, aln, args):
     node_dict[node_num] = aln
     current_node = node_num
-    node_weight = get_node_weight(aln, children_coords, parent)
+    node_weight = get_node_weight(aln, children_coords, parent, args)
     aln_graph.add_node(node_num, weight=node_weight)
-    edge_weight = get_edge_weight(node_dict[previous_node], node_dict[current_node], children_coords, parent)
+    edge_weight = get_edge_weight(node_dict[previous_node], node_dict[current_node], children_coords, parent, args)
     aln_graph.add_edge(previous_node, current_node, cost=edge_weight)
     return current_node
 
 
-def get_node_weight(aln, children_coords, parent):
+def get_node_weight(aln, children_coords, parent, args):
     weight = 0
     for child_interval in children_coords:
         relative_start = liftoff_utils.get_relative_child_coord(parent, child_interval[0], aln.is_reverse)
         relative_end = liftoff_utils.get_relative_child_coord(parent, child_interval[1], aln.is_reverse)
         child_start, child_end = min(relative_start, relative_end), max(relative_start, relative_end)
-        weight += len(aln.mismatches[(aln.mismatches >= child_start) & (aln.mismatches <= child_end)])
+        weight += len(aln.mismatches[(aln.mismatches >= child_start) & (aln.mismatches <= child_end)]) * args.mismatch
     return weight
 
 
-def get_edge_weight(from_node, to_node, children_coords, parent):
+def get_edge_weight(from_node, to_node, children_coords, parent, args):
     node_overlap = get_node_overlap(from_node, to_node)
     unaligned_range = [from_node.query_block_end + 1, to_node.query_block_start + node_overlap - 1]
     unaligned_exon_bases = 0
@@ -182,31 +184,34 @@ def get_edge_weight(from_node, to_node, children_coords, parent):
                                               max(unaligned_range[0], unaligned_range[1]))
         if overlap == 1 and unaligned_range[0] == unaligned_range[1] + 1 and from_node.reference_name == \
                 to_node.reference_name:
-            unaligned_exon_bases += (to_node.reference_block_start + node_overlap) - from_node.reference_block_end - 1
+            unaligned_exon_bases += ((to_node.reference_block_start + node_overlap) - from_node.reference_block_end\
+                                       - 1) * args.gap_extend
         else:
-            unaligned_exon_bases += max(0, overlap)
+            unaligned_exon_bases += max(0, overlap) * args.gap_extend
+    if unaligned_exon_bases >0:
+        unaligned_exon_bases += (args.gap_open - args.gap_extend) #gap open penalty
     return unaligned_exon_bases
 
 
 def chain_alignments(head_nodes, node_dict, aln_graph, parent, children_coords, intervals,
-                     parent_dict, lifted_features_list, distance_factor):
+                     parent_dict, lifted_features_list, args):
     for node_name in head_nodes:
         add_edges(node_name, node_dict, aln_graph, parent, children_coords, intervals,
-                  parent_dict, lifted_features_list, distance_factor)
+                  parent_dict, lifted_features_list, args)
 
 
 def add_edges(head_node_name, node_dict, aln_graph, parent, children_coords, intervals,
-              parent_dict, lifted_features_list, distance_factor):
+              parent_dict, lifted_features_list, args):
     for node_name in node_dict:
         from_node = node_dict[node_name]
         if is_valid_edge(node_name, head_node_name, parent, intervals,
-                         parent_dict, lifted_features_list, distance_factor
+                         parent_dict, lifted_features_list, args
                 , node_dict):
-            edge_weight = get_edge_weight(from_node, node_dict[head_node_name], children_coords, parent)
+            edge_weight = get_edge_weight(from_node, node_dict[head_node_name], children_coords, parent, args)
             aln_graph.add_edge(node_name, head_node_name, cost=edge_weight)
 
 
-def is_valid_edge(from_node_name, to_node_name, parent, intervals, parent_dict, lifted_features_list, distance_factor,
+def is_valid_edge(from_node_name, to_node_name, parent, intervals, parent_dict, lifted_features_list, args,
                   node_dict):
     from_node, to_node = node_dict[from_node_name], node_dict[to_node_name]
     if from_node.aln_id == to_node.aln_id:
@@ -222,7 +227,7 @@ def is_valid_edge(from_node_name, to_node_name, parent, intervals, parent_dict, 
         actual_distance = to_node.reference_block_end - from_node.reference_block_start
         if to_node.reference_block_start < from_node.reference_block_end:
             return False
-        if (actual_distance > distance_factor * expected_distance):
+        if (actual_distance > args.d * expected_distance):
             return False
         if spans_overlap_region(from_node, to_node, parent, intervals, parent_dict,
                                 lifted_features_list):
@@ -230,7 +235,7 @@ def is_valid_edge(from_node_name, to_node_name, parent, intervals, parent_dict, 
     return True
 
 
-def add_target_node(aln_graph, node_dict, query_length, children_coords, parent):
+def add_target_node(aln_graph, node_dict, query_length, children_coords, parent, args):
     num_nodes = max(node_dict.keys())
     node_dict[num_nodes + 1] = aligned_seg.aligned_seg("end", "end", "end", query_length, query_length,
                                                        query_length,
@@ -238,7 +243,7 @@ def add_target_node(aln_graph, node_dict, query_length, children_coords, parent)
     aln_graph.add_node(num_nodes + 1)
     for node_name in node_dict:
         if is_terminal_node(node_name, aln_graph) and node_name != num_nodes + 1:
-            edge_weight = get_edge_weight(node_dict[node_name], node_dict[num_nodes + 1], children_coords, parent)
+            edge_weight = get_edge_weight(node_dict[node_name], node_dict[num_nodes + 1], children_coords, parent, args)
             aln_graph.add_edge(node_name, num_nodes + 1, cost=edge_weight)
 
 
@@ -279,7 +284,7 @@ def trim_path_boundaries(shortest_path_nodes):
 def convert_all_children_coords(shortest_path_nodes, children, parent):
     shortest_path_nodes.sort(key=lambda x: x.query_block_start)
     mapped_children = {}
-    total_bases, mismatches, insertions, deletions = 0, 0, 0, 0
+    total_bases, mismatches, insertions, deletions, matches = 0, 0, 0, 0,0
     for child in children:
         total_bases += (child.end - child.start + 1)
         nearest_start_coord, nearest_end_coord = find_nearest_aligned_start_and_end(child.start, child.end,
@@ -295,13 +300,13 @@ def convert_all_children_coords(shortest_path_nodes, children, parent):
             new_child = new_feature.new_feature(child.id, child.featuretype, shortest_path_nodes[0].reference_name,
                                                 'Liftoff',
                                                 strand, min(lifted_start, lifted_end) + 1,
-                                                max(lifted_start, lifted_end) + 1, dict(child.attributes))
+                                                max(lifted_start, lifted_end) + 1, child.attributes)
             mapped_children[new_child.id] = new_child
         else:
             deletions += (child.end - child.start + 1)
-    return mapped_children, (total_bases - deletions) / total_bases, (total_bases - mismatches - (insertions +
-                                                                                                  deletions)) / \
-           total_bases
+    alignment_length = total_bases + insertions
+    return mapped_children, (total_bases - deletions) / total_bases, (alignment_length - insertions - mismatches -
+                                                                      deletions)/ alignment_length
 
 
 def find_nearest_aligned_start_and_end(child_start, child_end, shortest_path_nodes, parent):
