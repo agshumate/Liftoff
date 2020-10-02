@@ -86,7 +86,7 @@ Miscellaneous settings:
   -p P                use P parallel processes to accelerate alignment; by
                       default P=1
   -m PATH             Minimap2 path
-  -f TYPES            list of feature types to lift over
+  -f TYPES            a file listing the feature types to lift over
   -infer_genes        use if annotation file only includes transcripts,
                       exon/CDS features
   -infer_transcripts  use if annotation file only includes exon/CDS features
@@ -107,7 +107,7 @@ Miscellaneous settings:
 The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation or feature database. If an annotation file is provided with the -g argument, a feature database will be built automatically and can be used for future lift overs by providing the -db argument. The output is a gff file for the target genome and a file with the IDs of unmapped genes. 
 
 ### Feature Types
-By default, 'gene' features and all child features of genes (i.e. trancripts, mRNA, exons, CDS, UTRs) will be lifted over. The -f parameter can be used to provide a list of additional parent feature types you wish to lift-over. Note: feature IDs must be unique for every feature and may not contain spaces. 
+By default, 'gene' features and all child features of genes (i.e. trancripts, mRNA, exons, CDS, UTRs) will be lifted over. The -f parameter can be used to specify a file containing a list of additional parent feature types you wish to lift-over. Note: feature IDs must be unique for every feature and may not contain spaces. 
 
 ### Sequence Identity and Alignment Coverage
 A gene will be considered mapped successfully if the alignment coverage and sequence identity in the child features (usually exons/CDS) is >= 50%. This can be changed with the -a and -s options. By default, genes that map below these thresholds will be included in the gff file with partial_mapping=True and low_identity=True in the last column. To exclude these partial/low identity mappings from the final GFF use -exclude_partial, and these genes will instead be written to the unmapped_features.txt file. The sequence identity and alignment coverage is reported in the final column of the output GFF for feach gene. 
