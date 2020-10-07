@@ -86,7 +86,7 @@ def parse_args(arglist=None):
                                                            "target and "
                                                          "reference; by default F=0.0")
 
-    parser.add_argument('-V', '--version', help='show program version', action='version', version='v1.5.0')
+    parser.add_argument('-V', '--version', help='show program version', action='version', version='v1.5.1')
     parser.add_argument(
         '-p', default=1, type=int, metavar='P', help='use p parallel processes to accelerate alignment; by default p=1'
     )

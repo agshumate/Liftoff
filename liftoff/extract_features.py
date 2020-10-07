@@ -58,20 +58,19 @@ def find_problem_line(gff_file):
 
 def seperate_parents_and_children(feature_db, parent_types_to_lift):
     c = feature_db.conn.cursor()
-    relations = [list(feature) for feature in c.execute('''SELECT * FROM relations''') if feature[0] != feature[1]]
-    all_children_ids = [relation[1] for relation in relations]
-    all_parent_ids = [relation[0] for relation in relations]
+    relations = [list(feature) for feature in c.execute('''SELECT * FROM relations join features as a on 
+    a.id = relations.parent join features as b on b.id = relations.child''') if
+                 feature[0] != feature[1]]
     all_ids = [list(feature)[0]for feature in c.execute('''SELECT * FROM features''')]
-    # for relation in relations:
-    #     if relation[2] == 1 and relation[1] in all_ids:
-    #         feature_db[relation[1]].attributes["Parent"] = [relation[0]]
-    lowest_children = np.setdiff1d(all_ids, all_parent_ids)
+    all_children_ids = [relation[1] for relation in relations ]
+    all_parent_ids = [relation[0] for relation in relations]
+    lowest_children = np.setdiff1d(all_ids,  all_parent_ids )
     highest_parents = np.setdiff1d(all_ids, all_children_ids)
-    intermediates = (set(all_children_ids).intersection(set(all_parent_ids))).intersection(set(all_ids))
+    intermediates = set(all_children_ids).intersection(set( all_parent_ids ))
     parent_dict, child_dict, intermediate_dict = {}, {}, {}
     add_parents(parent_dict, child_dict, highest_parents, parent_types_to_lift, feature_db)
-    add_children(parent_dict, child_dict, lowest_children, feature_db, relations)
-    add_intermediates(intermediates, intermediate_dict, feature_db, relations)
+    add_children(parent_dict, child_dict, lowest_children, feature_db)
+    add_intermediates(intermediates, intermediate_dict, feature_db)
     parent_order = liftoff_utils.find_parent_order(
         [parent for parent in list(parent_dict.values()) if parent is not None])
     ref_feature_hierarchy = feature_hierarchy.feature_hierarchy(parent_dict, intermediate_dict, child_dict)
@@ -80,7 +79,8 @@ def seperate_parents_and_children(feature_db, parent_types_to_lift):
 
 def add_parents(parent_dict, child_dict, highest_parents, parent_types_to_lift, feature_db):
     c = feature_db.conn.cursor()
-    query =  "select * from features where id IN {}".format(tuple(highest_parents))
+    cond = ', '.join('"{0}"'.format(w) for w in highest_parents)
+    query =  "SELECT * FROM features WHERE id IN ({})".format(cond)
     for result in c.execute(query):
         feature_tup = tuple(result)
         parent = new_feature.new_feature(feature_tup[0], feature_tup[3], feature_tup[1], feature_tup[2],feature_tup[7],
@@ -90,11 +90,12 @@ def add_parents(parent_dict, child_dict, highest_parents, parent_types_to_lift, 
             child_dict[parent.id] = []
 
 
-def add_children(parent_dict, child_dict, lowest_children, feature_db, relations):
+def add_children(parent_dict, child_dict, lowest_children, feature_db):
     c = feature_db.conn.cursor()
-    query = "select * from relations join features on features.id  = relations.child where relations.child IN {" \
-            "}".format(tuple(lowest_children))
+    cond = ', '.join('"{0}"'.format(w) for w in lowest_children)
+    query = "select * from relations join features on features.id  = relations.child where relations.child IN ({})".format(cond)
     results = c.execute(query)
+    added_children_ids = []
     for result in results:
         feature_tup = tuple(result)
         parent = feature_tup[0]
@@ -105,10 +106,12 @@ def add_children(parent_dict, child_dict, lowest_children, feature_db, relations
             if "Parent" not in child.attributes:
                 add_parent_tag(child, feature_db)
             child_dict[parent].append(child)
-    single_level_features = np.setdiff1d(lowest_children, child_dict.values())
+            added_children_ids.append(child.id)
+    single_level_features = np.setdiff1d(lowest_children, added_children_ids)
     for feature in single_level_features:
         if feature in parent_dict:
             child_dict[feature] = [parent_dict[feature]]
+
 
 
 
@@ -125,9 +128,10 @@ def add_parent_tag(feature, feature_db):
 
 
 
-def add_intermediates(intermediate_ids, intermediate_dict, feature_db,relations):
+def add_intermediates(intermediate_ids, intermediate_dict, feature_db):
     c = feature_db.conn.cursor()
-    query =  "select * from features where id IN {}".format(tuple(intermediate_ids))
+    cond = ', '.join('"{0}"'.format(w) for w in intermediate_ids)
+    query =  "select * from features where id IN ({})".format(cond)
     for result in c.execute(query):
         feature_tup = tuple(result)
         intermediate_feature = new_feature.new_feature(feature_tup[0], feature_tup[3], feature_tup[1], feature_tup[2],

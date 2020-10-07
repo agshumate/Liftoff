@@ -302,6 +302,7 @@ def convert_all_children_coords(shortest_path_nodes, children, parent):
                                                 strand, min(lifted_start, lifted_end) + 1,
                                                 max(lifted_start, lifted_end) + 1, child.attributes)
             mapped_children[new_child.id] = new_child
+
         else:
             deletions += (child.end - child.start + 1)
     alignment_length = total_bases + insertions
