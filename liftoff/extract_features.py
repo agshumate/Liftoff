@@ -177,7 +177,6 @@ def get_fasta_out(chrom_name, reference_fasta_name, liftover_type, inter_files):
 
 
 def write_gene_sequences_to_file(chrom_name, reference_fasta_name, reference_fasta_idx, parents, fasta_out, args):
-    import time
     if chrom_name == reference_fasta_name:
         current_chrom = parents[0].seqid
     else:
