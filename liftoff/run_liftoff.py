@@ -5,6 +5,7 @@ import argparse
 
 def main(arglist=None):
     args = parse_args(arglist)
+    print("hello")
     if args.chroms is not None:
         ref_chroms, target_chroms = parse_chrm_files(args.chroms)
     else:

@@ -165,6 +165,7 @@ def get_node_weight(aln, children_coords, parent, args):
         relative_end = liftoff_utils.get_relative_child_coord(parent, child_interval[1], aln.is_reverse)
         child_start, child_end = min(relative_start, relative_end), max(relative_start, relative_end)
         weight += len(aln.mismatches[(aln.mismatches >= child_start) & (aln.mismatches <= child_end)]) * args.mismatch
+
     return weight
 
 
