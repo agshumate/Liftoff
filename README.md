@@ -169,7 +169,7 @@ With the -copies option, Liftoff will look for extra copies of genes that are no
 
 
 ## Citation
-If you use Liftoff in your work please cite
-```
+If you use Liftoff in your work please cite<br/>
+
 Shumate, Alaina, and Steven L. Salzberg. 2020. “Liftoff: Accurate Mapping of Gene Annotations.” Bioinformatics , December. https://doi.org/10.1093/bioinformatics/btaa1016.
-```
+
