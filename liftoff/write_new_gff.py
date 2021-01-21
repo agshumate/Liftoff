@@ -37,7 +37,7 @@ def add_to_copy_num_dict(parent, copy_num_dict):
 
 def add_attributes(parent, copy_num, args):
     parent.score = "."
-    parent.attributes["extra_copy_number"] = str(copy_num)
+    parent.attributes["extra_copy_number"] = copy_num
     parent.attributes["copy_num_ID"] = [parent.id + "_" + str(copy_num)]
     if float(parent.attributes["coverage"][0]) < args.a:
         parent.attributes["partial_mapping"] = ["True"]
@@ -49,7 +49,7 @@ def build_parent_dict(child_features, parent_dict, final_parent):
     parent_child_dict = {}
     for child in child_features:
         if child.id not in parent_dict:
-            child.attributes["extra_copy_number"] = final_parent.attributes["extra_copy_number"][0]
+            child.attributes["extra_copy_number"] = final_parent.attributes["extra_copy_number"]
             if child.attributes["Parent"][0] in parent_child_dict:
                 parent_child_dict[child.attributes["Parent"][0]].append(child)
             else:
@@ -84,7 +84,7 @@ def make_gff_line(feature):
         if attr != "copy_id":
             value_str = ""
             for value in feature.attributes[attr]:
-                value_str += value + ","
+                value_str += str(value) + ","
             attributes_str += (attr + "=" + value_str[:-1] + ";")
     return feature.seqid + "\t" + feature.source + "\t" + feature.featuretype + "\t" + str(feature.start) + \
            "\t" + str(feature.end) + "\t" + "." + "\t" + feature.strand + "\t" + "." + "\t" + attributes_str[:-1]
@@ -97,7 +97,7 @@ def make_gtf_line(feature):
             if len(feature.attributes[attr]) >0:
                 value_str = ""
                 for value in feature.attributes[attr]:
-                     value_str += value + ","
+                     value_str += str(value) + ","
                 attributes_str += (attr + " " + '"' + value_str[:-1] + '"' + "; ")
     return feature.seqid + "\t" + feature.source + "\t" + feature.featuretype + "\t" + str(feature.start) + \
            "\t" + str(feature.end) + "\t" + "." + "\t" + feature.strand + "\t" + "." + "\t" + attributes_str
