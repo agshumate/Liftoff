@@ -23,7 +23,7 @@ def main(arglist=None):
                                    ref_parent_order, args)
     write_unmapped_features_file(args.u, unmapped_features)
     map_extra_copies(args, lifted_feature_list, feature_hierarchy, feature_db, ref_parent_order)
-    write_new_gff.write_new_gff(lifted_feature_list, feature_hierarchy.parents, args, feature_db)
+    write_new_gff.write_new_gff(lifted_feature_list, args, feature_db)
 
 
 def parse_args(arglist=None):

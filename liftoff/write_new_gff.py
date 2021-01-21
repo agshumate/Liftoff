@@ -1,7 +1,7 @@
 from liftoff import liftoff_utils
 
 
-def write_new_gff(lifted_features, parents_dict, args, feature_db):
+def write_new_gff(lifted_features, args, feature_db):
     if args.o != 'stdout':
         f = open(args.o, 'w')
     else:
@@ -13,7 +13,7 @@ def write_new_gff(lifted_features, parents_dict, args, feature_db):
     final_parent_list.sort(key=lambda x: (x.seqid, x.start))
     for final_parent in final_parent_list:
         child_features = lifted_features[final_parent.attributes["copy_id"][0]]
-        parent_child_dict = build_parent_dict(child_features, parents_dict, final_parent)
+        parent_child_dict = build_parent_dict(child_features, final_parent)
         write_feature([final_parent], f, child_features, parent_child_dict, out_type)
 
 
@@ -37,7 +37,14 @@ def add_to_copy_num_dict(parent, copy_num_dict):
 
 def add_attributes(parent, copy_num, args):
     parent.score = "."
-    parent.attributes["extra_copy_number"] = str(copy_num)
+    keys_to_readd_at_end = ["copy_num_ID", "partial_mapping", "low_identity", "extra_copy_number",
+                            "partial_mapping",  "low_identity"]
+    if "copy_id" not in parent.attributes:
+        parent.attributes["copy_id"] = parent.attributes["copy_num_ID"]
+    for key in keys_to_readd_at_end:
+        if key in parent.attributes:
+            del  parent.attributes[key]
+    parent.attributes["extra_copy_number"] = [str(copy_num)]
     parent.attributes["copy_num_ID"] = [parent.id + "_" + str(copy_num)]
     if float(parent.attributes["coverage"][0]) < args.a:
         parent.attributes["partial_mapping"] = ["True"]
@@ -45,11 +52,11 @@ def add_attributes(parent, copy_num, args):
         parent.attributes["low_identity"] = ["True"]
 
 
-def build_parent_dict(child_features, parent_dict, final_parent):
+def build_parent_dict(child_features, final_parent):
     parent_child_dict = {}
     for child in child_features:
-        if child.id not in parent_dict:
-            child.attributes["extra_copy_number"] = final_parent.attributes["extra_copy_number"][0]
+        if "Parent" in child.attributes:
+            child.attributes["extra_copy_number"] = final_parent.attributes["extra_copy_number"]
             if child.attributes["Parent"][0] in parent_child_dict:
                 parent_child_dict[child.attributes["Parent"][0]].append(child)
             else:
@@ -79,13 +86,14 @@ def write_line(feature, out_file, output_type):
 
 
 def make_gff_line(feature):
-    attributes_str = ""
+    attributes_str = "ID=" + feature.attributes["ID"][0] + ";" #make ID the first printed attribute
     for attr in feature.attributes:
         if attr != "copy_id":
             value_str = ""
             for value in feature.attributes[attr]:
-                value_str += value + ","
-            attributes_str += (attr + "=" + value_str[:-1] + ";")
+                    value_str += value + ","
+            if attr != "ID":
+                attributes_str += (attr + "=" + value_str[:-1] + ";")
     return feature.seqid + "\t" + feature.source + "\t" + feature.featuretype + "\t" + str(feature.start) + \
            "\t" + str(feature.end) + "\t" + "." + "\t" + feature.strand + "\t" + "." + "\t" + attributes_str[:-1]
 

@@ -2,7 +2,7 @@ import numpy as np
 
 
 def count_overlap(start1, end1, start2, end2):
-    overlap = min(end1, end2) - max(start1, start2)
+    overlap = min(end1, end2) - max(start1, start2) +1
     return overlap
 
 
@@ -15,6 +15,8 @@ def get_relative_child_coord(parent, coord, is_reverse):
 
 
 def merge_children_intervals(children):
+    if len(children) == 0:
+        return []
     intervals = [[child.start, child.end] for child in children]
     intervals.sort(key=lambda interval: interval[0])
     merged = [intervals[0]]

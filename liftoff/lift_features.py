@@ -1,9 +1,10 @@
 from liftoff import find_best_mapping, liftoff_utils, merge_lifted_features
 
 
-def lift_all_features(alns, threshold, feature_db, features_to_lift, feature_hierarchy,
+def lift_all_features(alns, threshold, feature_db,  feature_hierarchy,
                       unmapped_features, lifted_feature_list, seq_id_threshold, feature_locations, args,
-                      ref_parent_order):
+                      ref_parent_order,):
+    features_to_lift = feature_hierarchy.parents
     feature_order = get_feature_order(feature_db)
     alignments = sort_alignments(features_to_lift, alns)
     num_features = 0
@@ -18,8 +19,10 @@ def lift_all_features(alns, threshold, feature_db, features_to_lift, feature_hie
                                                            previous_feature_seq, unmapped_features,
                                                            alignment, seq_id_threshold, feature_locations,
                                                            lifted_feature_list, args)
+
         if lifted_features != []:
             lifted_feature_list[parent_name] = lifted_features
+
 
 
 def get_feature_order(gene_db):
@@ -71,7 +74,7 @@ def lift_single_feature(threshold, feature_order, features_to_lift, feature_hier
                         previous_feature_start, previous_feature_ref_start, previous_gene_seq, unmapped_features,
                         aligned_feature, seq_id_threshold,
                         feature_locations,
-                        lifted_features_list, args ):
+                        lifted_features_list, args):
     new_parent_name = aligned_feature[0].query_name
     original_parent_name = liftoff_utils.convert_id_to_original(new_parent_name)
     parent = features_to_lift[original_parent_name]
@@ -85,7 +88,7 @@ def lift_single_feature(threshold, feature_order, features_to_lift, feature_hier
                                                                                           previous_gene_seq,
                                                                                           feature_locations,
                                                                                           lifted_features_list,
-                                                                                          args)
+                                                                                          args,)
 
 
         lifted_features = merge_lifted_features.merge_lifted_features(lifted_children,
@@ -95,6 +98,9 @@ def lift_single_feature(threshold, feature_order, features_to_lift, feature_hier
                                                                       feature_hierarchy,
                                                                       alignment_coverage, seq_id,
                                                                       seq_id_threshold)
+
+
+
     else:
         unmapped_features.append(parent)
     return lifted_features, aligned_feature[0].query_name

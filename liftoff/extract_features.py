@@ -14,7 +14,7 @@ def extract_features_to_lift(ref_chroms, liftover_type, parents_to_lift, args):
     print("extracting features")
     if os.path.exists(args.dir) is False:
         os.mkdir(args.dir)
-    feature_db, feature_db_name = create_feature_db_connections(args)
+    feature_db = create_feature_db_connections(args)
     feature_hierarchy, parent_order = seperate_parents_and_children(feature_db, parents_to_lift)
     get_gene_sequences(feature_hierarchy.parents, ref_chroms, args, liftover_type)
     return feature_hierarchy, feature_db, parent_order
@@ -29,19 +29,22 @@ def create_feature_db_connections(args):
         disable_genes = False
     else:
         disable_genes = True
-    if args.db is None:
+    feature_db = build_database(args.db, args.g, disable_transcripts, disable_genes)
+    return feature_db
+
+
+
+def build_database(db, gff_file, disable_transcripts, disable_genes):
+    if db is None:
         try:
-            feature_db = gffutils.create_db(args.g, args.g + "_db", merge_strategy="create_unique", force=True,
+            gffutils.create_db(gff_file, gff_file + "_db", merge_strategy="create_unique", force=True,
                                         disable_infer_transcripts=disable_transcripts,
                                         disable_infer_genes=disable_genes, verbose=True)
-
         except:
-            find_problem_line(args.g)
-        feature_db_name = args.db
-    else:
-        feature_db = gffutils.FeatureDB(args.db)
-        feature_db_name = args.db
-    return feature_db, feature_db_name
+            find_problem_line(gff_file)
+
+    feature_db = gffutils.FeatureDB(db)
+    return feature_db
 
 
 def find_problem_line(gff_file):
@@ -185,6 +188,6 @@ def write_gene_sequences_to_file(chrom_name, reference_fasta_name, reference_fas
         if parent.seqid == chrom_name or chrom_name == reference_fasta_name:
             gene_length = parent.end - parent.start + 1
             parent.start = round(max(1, parent.start - args.flank * gene_length))
-            parent.end = round(min(parent.end + args.flank * gene_length, len(chrom_seq) - 1))
+            parent.end = round(min(parent.end + args.flank * gene_length, len(chrom_seq)))
             parent_seq = chrom_seq[parent.start - 1: parent.end].seq
             fasta_out.write(">" + parent.id + "\n" + str(parent_seq) + "\n")

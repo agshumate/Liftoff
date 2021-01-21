@@ -287,16 +287,19 @@ def convert_all_children_coords(shortest_path_nodes, children, parent):
     total_bases, mismatches, insertions, deletions, matches = 0, 0, 0, 0,0
     for child in children:
         total_bases += (child.end - child.start + 1)
-        nearest_start_coord, nearest_end_coord = find_nearest_aligned_start_and_end(child.start, child.end,
+        nearest_start_coord, nearest_end_coord, relative_start, relative_end = find_nearest_aligned_start_and_end(
+            child.start, child.end,
                                                                                     shortest_path_nodes, parent)
         if nearest_start_coord != -1 and nearest_end_coord != -1:
             lifted_start, start_node = convert_coord(nearest_start_coord, shortest_path_nodes)
             lifted_end, end_node = convert_coord(nearest_end_coord, shortest_path_nodes)
             deletions += find_deletions(start_node, end_node, shortest_path_nodes)
-            deletions += (nearest_start_coord - child.start) + (child.end - nearest_end_coord)
+            deletions += (nearest_start_coord - relative_start) + (relative_end- nearest_end_coord)
             mismatches += find_mismatched_bases(child.start, child.end, shortest_path_nodes, parent)
             insertions += find_insertions(start_node, end_node, shortest_path_nodes)
             strand = get_strand(shortest_path_nodes[0], parent)
+            if "ID" not in child.attributes:
+                child.attributes["ID"] = [child.id]
             new_child = new_feature.new_feature(child.id, child.featuretype, shortest_path_nodes[0].reference_name,
                                                 'Liftoff',
                                                 strand, min(lifted_start, lifted_end) + 1,
@@ -316,7 +319,7 @@ def find_nearest_aligned_start_and_end(child_start, child_end, shortest_path_nod
     relative_start, relative_end = min(relative_coord1, relative_coord2), max(relative_coord1, relative_coord2)
     nearest_start = find_nearest_aligned_start(relative_start, relative_end, shortest_path_nodes)
     nearest_end = find_nearest_aligned_end(shortest_path_nodes, relative_end, relative_start)
-    return nearest_start, nearest_end
+    return nearest_start, nearest_end, relative_start, relative_end
 
 
 def find_nearest_aligned_start(relative_start, relative_end, shortest_path_nodes):
