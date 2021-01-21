@@ -59,6 +59,7 @@ def align_single_chroms(ref_chroms, target_chroms, threads, args, genome_size, l
         command = [minimap2_path, '-o', output_file, minimap2_index, features_file] + args.mm2_options.split(" ") + [
             '-t', threads_arg]
         subprocess.run(command)
+        
     return output_file
 
 
@@ -181,6 +182,7 @@ def get_aligned_blocks(alignment, aln_id, feature_hierarchy, search_type):
             if query_block_pos == query_end:
                 add_block(query_block_pos, reference_block_pos, aln_id, alignment, query_block_start,
                           reference_block_start, mismatches, new_blocks, merged_children_coords, parent)
+                break
         elif is_alignment_gap(operation, cigar_operations):
             add_block(query_block_pos, reference_block_pos, aln_id, alignment, query_block_start, reference_block_start,
                       mismatches, new_blocks, merged_children_coords, parent)
