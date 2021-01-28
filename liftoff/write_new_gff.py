@@ -37,7 +37,7 @@ def add_to_copy_num_dict(parent, copy_num_dict):
 
 def add_attributes(parent, copy_num, args):
     parent.score = "."
-    parent.attributes["extra_copy_number"] = copy_num
+    parent.attributes["extra_copy_number"] = [copy_num]
     parent.attributes["copy_num_ID"] = [parent.id + "_" + str(copy_num)]
     if float(parent.attributes["coverage"][0]) < args.a:
         parent.attributes["partial_mapping"] = ["True"]
