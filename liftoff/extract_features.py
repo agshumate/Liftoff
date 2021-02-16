@@ -31,10 +31,11 @@ def create_feature_db_connections(args):
         disable_genes = True
     if args.db is None:
         try:
+            print("Creating GFF db")
             feature_db = gffutils.create_db(args.g, args.g + "_db", merge_strategy="create_unique", force=True,
                                         disable_infer_transcripts=disable_transcripts,
                                         disable_infer_genes=disable_genes, verbose=True)
-
+            print("Done creating GFF db")
         except:
             find_problem_line(args.g)
         feature_db_name = args.db
@@ -144,8 +145,10 @@ def add_intermediates(intermediate_ids, intermediate_dict, feature_db):
 
 def get_gene_sequences(parent_dict, ref_chroms, args, liftover_type):
     fai = Fasta(args.reference)
+    print("Getting gene sequences")
     if liftover_type == "unplaced":
         open(args.dir + "/unplaced_genes.fa", 'w')
+
     for chrom in ref_chroms:
         fasta_out = get_fasta_out(chrom, args.reference, liftover_type, args.dir)
         sorted_parents = sorted(list(parent_dict.values()), key=lambda x: x.seqid)
@@ -154,6 +157,7 @@ def get_gene_sequences(parent_dict, ref_chroms, args, liftover_type):
                 "GFF does not contain any gene features. Use -f to provide a list of other feature types to lift over.")
         write_gene_sequences_to_file(chrom, args.reference, fai, sorted_parents, fasta_out, args)
         fasta_out.close()
+    print("Done getting gene sequences")
 
 
 def get_fasta_out(chrom_name, reference_fasta_name, liftover_type, inter_files):
@@ -177,14 +181,18 @@ def write_gene_sequences_to_file(chrom_name, reference_fasta_name, reference_fas
         current_chrom = parents[0].seqid
     else:
         current_chrom = chrom_name
-    chrom_seq = reference_fasta_idx[current_chrom]
-    for parent in parents:
+
+    print(f"Loading chrom seq: {current_chrom}")
+    chrom_seq = reference_fasta_idx[current_chrom][:].seq
+    for i,parent in enumerate(parents):
         if parent.seqid != current_chrom and chrom_name == reference_fasta_name:
             current_chrom = parent.seqid
-            chrom_seq = reference_fasta_idx[current_chrom]
+            print(f"Loading chrom seq: {current_chrom}")
+            chrom_seq = reference_fasta_idx[current_chrom][:].seq
+            print(f"Done loading chrom seq: {current_chrom}")
         if parent.seqid == chrom_name or chrom_name == reference_fasta_name:
             gene_length = parent.end - parent.start + 1
             parent.start = round(max(1, parent.start - args.flank * gene_length))
             parent.end = round(min(parent.end + args.flank * gene_length, len(chrom_seq) - 1))
-            parent_seq = chrom_seq[parent.start - 1: parent.end].seq
+            parent_seq = chrom_seq[parent.start - 1: parent.end]
             fasta_out.write(">" + parent.id + "\n" + str(parent_seq) + "\n")
