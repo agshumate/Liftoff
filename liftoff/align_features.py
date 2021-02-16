@@ -1,12 +1,14 @@
-from multiprocessing import Pool
-import math
 from functools import partial
-import numpy as np
-from pyfaidx import Fasta, Faidx
-import subprocess
-import pysam
-from liftoff import aligned_seg, liftoff_utils
+import math
+from multiprocessing import Pool
 from os import path
+import subprocess
+
+import numpy as np
+from pyfaidx import Faidx, Fasta
+import pysam
+
+from liftoff import aligned_seg, liftoff_utils
 
 
 def align_features_to_target(ref_chroms, target_chroms, args, feature_hierarchy, liftover_type, unmapped_features):
@@ -54,12 +56,31 @@ def align_single_chroms(ref_chroms, target_chroms, threads, args, genome_size, l
         command = [minimap2_path, '-o', output_file, target_file, features_file] + args.mm2_options.split(" ") + [
             "--split-prefix", split_prefix, '-t', threads_arg]
         subprocess.run(command)
+        modified_sam_header(output_file)
     else:
         minimap2_index = build_minimap2_index(target_file, args, threads_arg, minimap2_path)
         command = [minimap2_path, '-o', output_file, minimap2_index, features_file] + args.mm2_options.split(" ") + [
             '-t', threads_arg]
         subprocess.run(command)
+        modified_sam_header(output_file)
     return output_file
+
+
+def modified_sam_header(sam_file):
+    header_lines, alignment_lines = [], []
+    with open(sam_file, 'r') as open_sam:
+        for eachline in open_sam.readlines():
+            if eachline[0] == '@':
+                header_lines.append(eachline)
+            else:
+                alignment_lines.append(eachline)
+    modified_header_lines = []
+    for header_line in header_lines:
+        if header_line not in modified_header_lines:
+            modified_header_lines.append(header_line)
+    with open(sam_file, 'w') as open_sam:
+        open_sam.writelines(modified_header_lines)
+        open_sam.writelines(alignment_lines)
 
 
 def get_features_file(ref_chroms, args, liftover_type, index):
