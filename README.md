@@ -109,8 +109,8 @@ Miscellaneous settings:
   -gap_extend GE      gap extend penalty in exons when finding best mapping;
                       by default GE=1
 ```
-### Input and Output
-The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation or feature database. If an annotation file is provided with the -g argument, a feature database will be built automatically and can be used for future lift overs by providing the -db argument. The output is a file in the same format as the reference annotation (GFF3 or GTF) for the target genome and a file with the IDs of unmapped genes. 
+### Input
+The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation or feature database. If an annotation file is provided with the -g argument, a feature database will be built automatically and can be used for future lift overs by providing the -db argument. 
 
 ### Feature Types
 By default, 'gene' features and all child features of genes (i.e. trancripts, mRNA, exons, CDS, UTRs) will be lifted over. The -f parameter can be used to specify a file containing a list of additional parent feature types you wish to lift-over. Note: feature IDs must be unique for every feature and may not contain spaces. 
@@ -127,6 +127,8 @@ The user may wish to change the minimap2 parameters for their specific data. Thi
 ```
 -mm2_options="-r 2k -z 5000"
 ```
+### Polishing Exon/CDS Annotations
+With the -polish option Liftoff will re-align the exons in attempt to restore proper coding sequences in cases where the lift-over resulted in start/stop codon loss or introduced an in-frame stop codon. This will increase the run time but offers improvments in preserving proper CDS annotations. With the polish option, 2 output GFF/GTF files will be created named {output}.gff and {output}.gff_polished. {output}.gff contains the annotations prior to the polishing step and {output}.gff_polished contains the annotations after being polished.
 
 ### Gene Structure in Cross-Species Lift-over
 Liftoff works best when the gene structure (i.e intron size) is similar in the reference and target genomes. When genes differ significantly in size, the alignments are more fragmented and often small exons at the beginning or end of the gene are not aligned. Adding and aligning some percentage of flanking sequence to the gene with the -flank option can improve this in some cases. Additionally increasing the -d parameter will allow mappings where the genes are much larger in the target genome than in the reference. 
@@ -167,6 +169,31 @@ A list of unplaced sequence names can be provided with the -unplaced option. Wit
 ### Extra Gene Copies
 With the -copies option, Liftoff will look for extra copies of genes that are not annotated in the reference after the initial lift over. A gene copy will only be annonated at a locus if it does not overlap another annotated feature. By default, exons/CDS's must have 100% sequence identity Extra gene copies will have the same ID as the reference gene and will be tagged with extra_copy_number={copy_number} in the last column of the GFF file. 
 
+### Output
+The output is a file in the same format as the reference annotation (GFF3 or GTF) for the target genome and a file with the IDs of unmapped genes. The 9th column of the target annotation will contain the same information as the original reference plus the following
+
+#### Genes:
+```
+sequence_ID: The sequence identity of the gene compared to the reference in exon regions
+coverage: The alignment coverage of the gene in exon regions
+valid_ORFs: The number of valid ORFs annotated within the gene
+```
+
+#### Transcripts:
+```
+valid_ORF: Indicates the CDS annotation properly starts with a start codon, ends with a stop codon, 
+           and does not have any in-frame stop codons.
+matches_ref_protein: Indicates the translated CDS matches the reference CDS exactly
+missing_start_codon: Indicates the CDS does not begin with a start codon
+missing_stop_codon: Indicates the CDS does not end with a stop codon
+inframe_stop_codon: Indicates the CDS has an inframe stop codon. 
+```
+
+#### All features:
+```
+extra_copy_number: The copy number increase of this feature compared to the reference. 
+extra_copy_number=0 means this is the original reference gene. 
+```
 
 ## Citation
 If you use Liftoff in your work please cite<br/>
