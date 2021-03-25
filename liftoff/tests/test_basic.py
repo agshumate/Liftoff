@@ -30,9 +30,12 @@ def test_yeast(tmp_path):
 
     # verify the output
     with open(output, 'r') as fh1, open(expout, 'r') as fh2:
-        observed_output = fh1.read().strip()
-        expected_output = fh2.read().strip()
-        assert observed_output == expected_output
+        fh1_lines = fh1.readlines()
+        fh2_lines = fh2.readlines()
+        for i in range(len(fh1_lines)):
+                observed_output = fh1_lines[i].strip().split("\t")[0:8]
+                expected_output = fh2_lines[i].strip().split("\t")[0:8]
+                assert observed_output == expected_output
     with open(unmapped, 'r') as fh1, open(expunmapped, 'r') as fh2:
         observed_output = fh1.read().strip()
         expected_output = fh2.read().strip()

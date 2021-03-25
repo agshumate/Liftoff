@@ -1,7 +1,6 @@
 from collections import defaultdict
 import warnings
 from Bio.Seq import Seq
-from Bio.Alphabet import generic_dna
 from liftoff import liftoff_utils
 import parasail
 from itertools import groupby
@@ -132,9 +131,9 @@ def get_seq(cds_group, fasta_index):
         sub_seq = chrom_seq[cds.start -1:cds.end]
         cds_seq += sub_seq.seq
     if cds.strand == "-":
-        cds_seq = Seq(cds_seq, generic_dna).reverse_complement()
+        cds_seq = Seq(cds_seq).reverse_complement()
     else:
-        cds_seq = Seq(cds_seq, generic_dna)
+        cds_seq = Seq(cds_seq)
     return cds_seq.upper()
 
 
