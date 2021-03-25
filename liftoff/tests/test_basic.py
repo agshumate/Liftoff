@@ -13,9 +13,9 @@ def test_yeast(tmp_path):
             pass
 
     # inputs
-    asmbl = 'liftoff/tests/GCA_000146045.2_R64_genomic.fna.gz'
-    annot = 'liftoff/tests/GCA_000146045.2_R64_genomic.gff.gz'
-    target = 'liftoff/tests/GCA_000146045.2_R64_genomic.fna.gz'
+    asmbl = 'GCA_000146045.2_R64_genomic.fna.gz'
+    annot = 'GCA_000146045.2_R64_genomic.gff.gz'
+    target = 'GCA_000146045.2_R64_genomic.fna.gz'
 
     # outputs
     output = str(tmp_path / 'GCA_000146045.2_R64_to_GCA_000146045.2_basic.gff3')
