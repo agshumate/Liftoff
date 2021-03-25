@@ -1,7 +1,7 @@
 from liftoff import liftoff_utils
 
 
-def write_new_gff(lifted_features, parents_dict, args, feature_db):
+def write_new_gff(lifted_features, args, feature_db):
     if args.o != 'stdout':
         f = open(args.o, 'w')
     else:
@@ -13,7 +13,7 @@ def write_new_gff(lifted_features, parents_dict, args, feature_db):
     final_parent_list.sort(key=lambda x: (x.seqid, x.start))
     for final_parent in final_parent_list:
         child_features = lifted_features[final_parent.attributes["copy_id"][0]]
-        parent_child_dict = build_parent_dict(child_features, feature_db, final_parent)
+        parent_child_dict = build_parent_dict(child_features, final_parent)
         write_feature([final_parent], f, child_features, parent_child_dict, out_type)
 
 
@@ -46,13 +46,14 @@ def add_attributes(parent, copy_num, args):
             del  parent.attributes[key]
     parent.attributes["extra_copy_number"] = [str(copy_num)]
     parent.attributes["copy_num_ID"] = [parent.id + "_" + str(copy_num)]
+
     if float(parent.attributes["coverage"][0]) < args.a:
         parent.attributes["partial_mapping"] = ["True"]
     if float(parent.attributes["sequence_ID"][0]) < args.s:
         parent.attributes["low_identity"] = ["True"]
 
 
-def build_parent_dict(child_features, db, final_parent):
+def build_parent_dict(child_features, final_parent):
     parent_child_dict = {}
     for child in child_features:
         if "Parent" in child.attributes:
@@ -86,6 +87,7 @@ def write_line(feature, out_file, output_type):
 
 
 def make_gff_line(feature):
+    edit_copy_ids(feature)
     attributes_str = "ID=" + feature.attributes["ID"][0] + ";" #make ID the first printed attribute
     for attr in feature.attributes:
         if attr != "copy_id":
@@ -96,6 +98,15 @@ def make_gff_line(feature):
                 attributes_str += (attr + "=" + value_str[:-1] + ";")
     return feature.seqid + "\t" + feature.source + "\t" + feature.featuretype + "\t" + str(feature.start) + \
            "\t" + str(feature.end) + "\t" + "." + "\t" + feature.strand + "\t" + "." + "\t" + attributes_str[:-1]
+
+def edit_copy_ids(feature):
+    copy_num = feature.attributes["extra_copy_number"][0]
+    if copy_num != '0':
+        feature.attributes["ID"] = [feature.attributes["ID"][0]+ "_" + copy_num]
+    if "Parent" in feature.attributes:
+        feature.attributes["Parent"] = [feature.attributes["Parent"][0] + "_" + copy_num]
+    if "gene_id" in feature.attributes:
+        feature.attributes["gene_id"] = [feature.attributes["gene_id"][0] + "_" + copy_num]
 
 
 def make_gtf_line(feature):

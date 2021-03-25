@@ -9,8 +9,7 @@ from liftoff import aligned_seg, liftoff_utils
 from os import path
 
 
-def align_features_to_target(ref_chroms, target_chroms, args, feature_hierarchy, liftover_type, unmapped_features,
-                             raw_alns):
+def align_features_to_target(ref_chroms, target_chroms, args, feature_hierarchy, liftover_type, unmapped_features):
     if args.subcommand == "polish":
         sam_files = [args.dir + "/polish.sam"]
     else:
@@ -26,7 +25,7 @@ def align_features_to_target(ref_chroms, target_chroms, args, feature_hierarchy,
             sam_files.append(result)
         pool.close()
         pool.join()
-    return parse_all_sam_files(feature_hierarchy, unmapped_features, liftover_type, sam_files, raw_alns)
+    return parse_all_sam_files(feature_hierarchy, unmapped_features, liftover_type, sam_files)
 
 
 def split_target_sequence(target_chroms, target_fasta_name, inter_files):
@@ -113,32 +112,29 @@ def build_minimap2_index(target_file, args, threads, minimap2_path):
     return target_file + ".mmi"
 
 
-def parse_all_sam_files(feature_hierarchy, unmapped_features, liftover_type, sam_files, raw_alns):
+def parse_all_sam_files(feature_hierarchy, unmapped_features, liftover_type, sam_files):
     aligned_segments_dict = {}
-    aln_id = len(raw_alns)-1
     for file in sam_files:
-        aligned_segments, aln_id = parse_alignment(file, feature_hierarchy, unmapped_features, liftover_type, aln_id,
-                                                   raw_alns)
+        aligned_segments = parse_alignment(file, feature_hierarchy, unmapped_features, liftover_type)
         aligned_segments_dict.update(aligned_segments)
     return aligned_segments_dict
 
 
-def parse_alignment(file, feature_hierarchy, unmapped_features, search_type, aln_id, raw_alns):
+def parse_alignment(file, feature_hierarchy, unmapped_features, search_type):
     all_aligned_blocks = {}
     sam_file = pysam.AlignmentFile(file, 'r', check_sq=False, check_header=False)
     sam_file_iter = sam_file.fetch()
+    aln_id = 0
     name_dict = {}
     align_count_dict = {}
     for ref_seq in sam_file_iter:
         if ref_seq.is_unmapped is False:
-            aln_id = add_alignment(ref_seq,  align_count_dict, search_type, name_dict, aln_id,
-                                   feature_hierarchy, all_aligned_blocks)
-            raw_alns[aln_id] = ref_seq
-
+            aln_id = add_alignment(ref_seq,  align_count_dict, search_type, name_dict,aln_id, feature_hierarchy,
+                                   all_aligned_blocks)
         else:
             unmapped_features.append(feature_hierarchy.parents[ref_seq.query_name])
     remove_alignments_without_children(all_aligned_blocks, unmapped_features, feature_hierarchy)
-    return all_aligned_blocks, aln_id
+    return all_aligned_blocks
 
 
 def add_alignment(ref_seq, align_count_dict, search_type, name_dict, aln_id, feature_hierarchy,

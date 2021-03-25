@@ -6,7 +6,7 @@ import igraph as ig
 
 def find_best_mapping(alignments, query_length, parent, feature_heirarchy, previous_feature_start,
                       previous_feature_ref_start, previous_gene_seq,
-                      inter,lifted_features_list, args, raw_alns, alignments_used, new_parent_name):
+                      inter,lifted_features_list, args):
     children = feature_heirarchy.children[parent.id]
     children_coords = liftoff_utils.merge_children_intervals(children)
     node_dict, aln_graph = intialize_graph()

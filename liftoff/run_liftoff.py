@@ -19,36 +19,30 @@ def run_all_liftoff_steps(args):
     parent_features_to_lift = get_parent_features_to_lift(args.f)
     lifted_feature_list = {}
     unmapped_features = []
-    alignments_used, raw_alignments = {}, {}
     feature_db, feature_hierarchy, ref_parent_order = liftover_types.lift_original_annotation(ref_chroms, target_chroms,
                                                                                               lifted_feature_list, args,
                                                                                               unmapped_features,
-                                                                                              parent_features_to_lift,
-                                                                                              alignments_used,
-                                                                                              raw_alignments)
+                                                                                              parent_features_to_lift)
 
     unmapped_features = map_unmapped_features(unmapped_features, target_chroms, lifted_feature_list, feature_db,
-                                              feature_hierarchy, ref_parent_order, args, raw_alignments,
-                                              alignments_used)
+                                              feature_hierarchy, ref_parent_order, args)
     map_features_from_unplaced_seq(unmapped_features, lifted_feature_list, feature_db, feature_hierarchy,
-                                   ref_parent_order, args, raw_alignments, alignments_used)
+                                   ref_parent_order, args)
     write_unmapped_features_file(args.u, unmapped_features)
-    map_extra_copies(args, lifted_feature_list, feature_hierarchy, feature_db, ref_parent_order,
-                     raw_alignments, alignments_used)
+    map_extra_copies(args, lifted_feature_list, feature_hierarchy, feature_db, ref_parent_order)
 
     if args.cds and args.polish is False:
         check_cds(lifted_feature_list, feature_hierarchy, args)
     if args.polish:
          print("polishing annotations")
          check_cds(lifted_feature_list, feature_hierarchy, args)
-         write_new_gff.write_new_gff(lifted_feature_list, feature_hierarchy.parents, args, feature_db)
+         write_new_gff.write_new_gff(lifted_feature_list, args, feature_db)
          find_and_polish_broken_cds(args, lifted_feature_list,feature_hierarchy, ref_chroms,
                                                           target_chroms,
-                               unmapped_features, raw_alignments, feature_db, ref_parent_order, alignments_used)
+                               unmapped_features, feature_db, ref_parent_order)
          if args.o is not 'stdout':
              args.o += "_polished"
-
-    write_new_gff.write_new_gff(lifted_feature_list, feature_hierarchy.parents, args, feature_db)
+    write_new_gff.write_new_gff(lifted_feature_list, args, feature_db)
 
 
 
@@ -199,26 +193,25 @@ def get_parent_features_to_lift(feature_types_file):
 
 
 def map_unmapped_features(unmapped_features, target_chroms, lifted_feature_list, feature_db, feature_hierarchy,
-                          ref_parent_order, args, raw_alns, alignments_used):
+                          ref_parent_order, args):
     if len(unmapped_features) > 0 and target_chroms[0] != args.target:
         print("mapping unaligned features to whole genome")
         ref_chroms = [args.reference]
         target_chroms = [args.target]
         return liftover_types.map_unmapped_genes_agaisnt_all(unmapped_features, ref_chroms, target_chroms,
                                                              lifted_feature_list, feature_db, feature_hierarchy,
-                                                             ref_parent_order, args,raw_alns, alignments_used)
+                                                             ref_parent_order, args)
     return unmapped_features
 
 
 def map_features_from_unplaced_seq(unmapped_features, lifted_feature_list, feature_db, feature_hierarchy,
-                                   ref_parent_order, args, raw_alns, alignments_used):
+                                   ref_parent_order, args):
     if args.unplaced is not None and args.chroms is not None:
         print("mapping unplaced genes")
         ref_chroms, target_chroms = parse_chrm_files(args.unplaced)
         target_chroms = [args.target]
         liftover_types.map_unplaced_genes(unmapped_features, ref_chroms, target_chroms,
-                                          lifted_feature_list, feature_db, feature_hierarchy, ref_parent_order, args,
-                                          raw_alns, alignments_used)
+                                          lifted_feature_list, feature_db, feature_hierarchy, ref_parent_order, args)
 
 
 def write_unmapped_features_file(out_arg, unmapped_features):
@@ -228,18 +221,17 @@ def write_unmapped_features_file(out_arg, unmapped_features):
     unmapped_out.close()
 
 
-def map_extra_copies(args, lifted_feature_list, feature_hierarchy, feature_db, ref_parent_order,
-                     raw_alns, alignments_used):
+def map_extra_copies(args, lifted_feature_list, feature_hierarchy, feature_db, ref_parent_order):
     if args.copies:
         print("mapping gene copies")
         ref_chroms = [args.reference]
         target_chroms = [args.target]
         liftover_types.map_extra_copies(ref_chroms, target_chroms, lifted_feature_list, feature_hierarchy, feature_db,
-                                        ref_parent_order, args, raw_alns, alignments_used)
+                                        ref_parent_order, args)
 
 
 def find_and_polish_broken_cds(args, lifted_feature_list,feature_hierarchy, ref_chroms, target_chroms,
-                               unmapped_features, raw_alignments, feature_db, ref_parent_order, alignments_used):
+                               unmapped_features, feature_db, ref_parent_order,):
     args.subcommand = "polish"
     polish_lifted_features = {}
     ref_fa, target_fa = Fasta(args.reference), Fasta(args.target)
@@ -248,14 +240,14 @@ def find_and_polish_broken_cds(args, lifted_feature_list,feature_hierarchy, ref_
         if polish.polish_annotations(lifted_feature_list, ref_fa, target_fa, args, feature_hierarchy, target_feature):
             aligned_segments = align_features.align_features_to_target(ref_chroms, target_chroms, args,
                                                                        feature_hierarchy,
-                                                                       "chrm_by_chrm", unmapped_features, raw_alignments)
+                                                                       "chrm_by_chrm", unmapped_features)
             aligned_segments_new[target_feature] = list(aligned_segments.values())[0]
             for seg in aligned_segments_new[target_feature]:
                 seg.query_name = target_feature
             args.d = 100000000
             lift_features.lift_all_features(aligned_segments_new, args.a, feature_db, feature_hierarchy,
                                             unmapped_features, polish_lifted_features, args.s, None, args,
-                                            ref_parent_order, raw_alignments, alignments_used)
+                                            ref_parent_order)
 
     check_cds(polish_lifted_features, feature_hierarchy, args)
     for feature in polish_lifted_features:

@@ -6,13 +6,13 @@ from interlap import InterLap
 def fix_incorrectly_overlapping_features(all_lifted_features, features_to_check, all_aligned_segs,
                                          unmapped_features, threshold, feature_hierarchy, feature_db,
                                          ref_parent_order, seq_id_threshold, distance_factor,
-                                         max_overlap, raw_alns, alignments_used):
+                                         max_overlap):
     features_to_remap, feature_locations = check_homologues(all_lifted_features, features_to_check,
                                                             feature_hierarchy.parents,
                                                             ref_parent_order, max_overlap)
     resolve_overlapping_homologues(all_aligned_segs, all_lifted_features, features_to_remap, unmapped_features,
                                    threshold, feature_hierarchy, feature_db, ref_parent_order, seq_id_threshold,
-                                   feature_locations, distance_factor, max_overlap, raw_alns, alignments_used)
+                                   feature_locations, distance_factor, max_overlap)
 
 
 def check_homologues(all_lifted_features, lifted_features_to_check, parent_dict, ref_parent_order, max_overlap):
@@ -137,7 +137,7 @@ def is_shorter(feature1, feature2):
 
 def resolve_overlapping_homologues(all_aligned_segs, lifted_feature_list, features_to_remap, unmapped_features,
                                    threshold, feature_hierarchy, feature_db, ref_parent_order, seq_id_threshold,
-                                   feature_locations, distance_factor, max_overlap, raw_alns, alignments_used):
+                                   feature_locations, distance_factor, max_overlap):
     iter = 0
     max_iter = 10 * len(features_to_remap)
     while len(features_to_remap) > 0:
@@ -149,7 +149,7 @@ def resolve_overlapping_homologues(all_aligned_segs, lifted_feature_list, featur
         lift_features.lift_all_features(aligned_segs_for_remap, threshold, feature_db, feature_hierarchy,
                                         unmapped_features,
                                         lifted_feature_list, seq_id_threshold, feature_locations, distance_factor,
-                                        ref_parent_order, raw_alns, alignments_used)
+                                        ref_parent_order)
         features_to_check = get_successfully_remapped_features(lifted_feature_list, features_to_remap,
                                                                )
         features_to_remap, feature_locations = check_homologues(lifted_feature_list, features_to_check,
