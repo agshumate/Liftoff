@@ -9,20 +9,24 @@ from liftoff import aligned_seg, liftoff_utils
 from os import path
 
 
-def align_features_to_target(ref_chroms, target_chroms, args, feature_hierarchy, liftover_type, unmapped_features):
-    print("aligning features")
-    target_fasta_dict = split_target_sequence(target_chroms, args.target, args.dir)
-    genome_size = get_genome_size(target_fasta_dict)
-    threads_per_alignment = max(1, math.floor(int(args.p) / len(ref_chroms)))
-    sam_files = []
-    pool = Pool(int(args.p))
-    func = partial(align_single_chroms, ref_chroms, target_chroms, threads_per_alignment, args, genome_size,
-                   liftover_type)
-    for result in pool.imap_unordered(func, np.arange(0, len(target_chroms))):
-        sam_files.append(result)
-    pool.close()
-    pool.join()
-    return parse_all_sam_files(feature_hierarchy, unmapped_features, liftover_type, sam_files)
+def align_features_to_target(ref_chroms, target_chroms, args, feature_hierarchy, liftover_type, unmapped_features,
+                             raw_alns):
+    if args.subcommand == "polish":
+        sam_files = [args.dir + "/polish.sam"]
+    else:
+        target_fasta_dict = split_target_sequence(target_chroms, args.target, args.dir)
+        genome_size = get_genome_size(target_fasta_dict)
+        threads_per_alignment = max(1, math.floor(int(args.p) / len(ref_chroms)))
+        sam_files = []
+        pool = Pool(int(args.p))
+        print("aligning features")
+        func = partial(align_single_chroms, ref_chroms, target_chroms, threads_per_alignment, args, genome_size,
+                       liftover_type)
+        for result in pool.imap_unordered(func, np.arange(0, len(target_chroms))):
+            sam_files.append(result)
+        pool.close()
+        pool.join()
+    return parse_all_sam_files(feature_hierarchy, unmapped_features, liftover_type, sam_files, raw_alns)
 
 
 def split_target_sequence(target_chroms, target_fasta_name, inter_files):
@@ -59,7 +63,6 @@ def align_single_chroms(ref_chroms, target_chroms, threads, args, genome_size, l
         command = [minimap2_path, '-o', output_file, minimap2_index, features_file] + args.mm2_options.split(" ") + [
             '-t', threads_arg]
         subprocess.run(command)
-        
     return output_file
 
 
@@ -110,29 +113,32 @@ def build_minimap2_index(target_file, args, threads, minimap2_path):
     return target_file + ".mmi"
 
 
-def parse_all_sam_files(feature_hierarchy, unmapped_features, liftover_type, sam_files):
+def parse_all_sam_files(feature_hierarchy, unmapped_features, liftover_type, sam_files, raw_alns):
     aligned_segments_dict = {}
+    aln_id = len(raw_alns)-1
     for file in sam_files:
-        aligned_segments = parse_alignment(file, feature_hierarchy, unmapped_features, liftover_type)
+        aligned_segments, aln_id = parse_alignment(file, feature_hierarchy, unmapped_features, liftover_type, aln_id,
+                                                   raw_alns)
         aligned_segments_dict.update(aligned_segments)
     return aligned_segments_dict
 
 
-def parse_alignment(file, feature_hierarchy, unmapped_features, search_type):
+def parse_alignment(file, feature_hierarchy, unmapped_features, search_type, aln_id, raw_alns):
     all_aligned_blocks = {}
     sam_file = pysam.AlignmentFile(file, 'r', check_sq=False, check_header=False)
     sam_file_iter = sam_file.fetch()
-    aln_id = 0
     name_dict = {}
     align_count_dict = {}
     for ref_seq in sam_file_iter:
         if ref_seq.is_unmapped is False:
             aln_id = add_alignment(ref_seq,  align_count_dict, search_type, name_dict, aln_id,
                                    feature_hierarchy, all_aligned_blocks)
+            raw_alns[aln_id] = ref_seq
+
         else:
             unmapped_features.append(feature_hierarchy.parents[ref_seq.query_name])
     remove_alignments_without_children(all_aligned_blocks, unmapped_features, feature_hierarchy)
-    return all_aligned_blocks
+    return all_aligned_blocks, aln_id
 
 
 def add_alignment(ref_seq, align_count_dict, search_type, name_dict, aln_id, feature_hierarchy,
@@ -242,7 +248,10 @@ def add_block(query_block_pos, reference_block_pos, aln_id, alignment, query_blo
                                         np.array(mismatches).astype(int))
     overlapping_children = find_overlapping_children(new_block, merged_children_coords, parent)
     if overlapping_children != []:
+
         new_blocks.append(new_block)
+
+
 
 
 def find_overlapping_children(aln, children_coords, parent):

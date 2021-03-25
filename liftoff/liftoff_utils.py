@@ -2,7 +2,7 @@ import numpy as np
 
 
 def count_overlap(start1, end1, start2, end2):
-    overlap = min(end1, end2) - max(start1, start2)
+    overlap = min(end1, end2) - max(start1, start2) +1
     return overlap
 
 
@@ -15,6 +15,8 @@ def get_relative_child_coord(parent, coord, is_reverse):
 
 
 def merge_children_intervals(children):
+    if len(children) == 0:
+        return []
     intervals = [[child.start, child.end] for child in children]
     intervals.sort(key=lambda interval: interval[0])
     merged = [intervals[0]]
@@ -81,7 +83,7 @@ def find_overlaps(start, end, chrm, strand, feature_name, intervals, parent_dict
                          overlap[2][1].seqid == chrm and overlap[2][1].strand == strand]
 
     for overlap in filtered_overlaps:
-        shortest_feature_length = min(end - start, overlap[1] - overlap[0])
+        shortest_feature_length = min(end - start, overlap[1] - overlap[0]) +1
         overlap_amount = count_overlap(start, end, overlap[0], overlap[1])
         ref_feature = parent_dict[convert_id_to_original(feature_name)]
         ref_overlap_feature = parent_dict[convert_id_to_original(overlap[2][0])]

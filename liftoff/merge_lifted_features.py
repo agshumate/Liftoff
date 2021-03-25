@@ -73,7 +73,7 @@ def process_final_features_list(feature_list, top_target_feature, seq_id, seq_id
         unmapped_features.append(parent)
     else:
         top_target_feature.score = 1 - seq_id
-        top_target_feature.attributes["copy_id"] = [copy_id]
+        top_target_feature.attributes["copy_num_ID"] = [copy_id]
         top_target_feature.attributes["coverage"] = [str(aln_cov)[0:5]]
         top_target_feature.attributes["sequence_ID"] = [str(seq_id)[0:5]]
     return final_features

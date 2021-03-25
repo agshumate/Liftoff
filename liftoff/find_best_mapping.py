@@ -1,11 +1,12 @@
 import networkx as nx
 from liftoff import aligned_seg, liftoff_utils, new_feature
 import numpy as np
+import igraph as ig
 
 
 def find_best_mapping(alignments, query_length, parent, feature_heirarchy, previous_feature_start,
                       previous_feature_ref_start, previous_gene_seq,
-                      inter,lifted_features_list, args):
+                      inter,lifted_features_list, args, raw_alns, alignments_used, new_parent_name):
     children = feature_heirarchy.children[parent.id]
     children_coords = liftoff_utils.merge_children_intervals(children)
     node_dict, aln_graph = intialize_graph()
@@ -165,7 +166,6 @@ def get_node_weight(aln, children_coords, parent, args):
         relative_end = liftoff_utils.get_relative_child_coord(parent, child_interval[1], aln.is_reverse)
         child_start, child_end = min(relative_start, relative_end), max(relative_start, relative_end)
         weight += len(aln.mismatches[(aln.mismatches >= child_start) & (aln.mismatches <= child_end)]) * args.mismatch
-
     return weight
 
 
@@ -185,12 +185,12 @@ def get_edge_weight(from_node, to_node, children_coords, parent, args):
                                               max(unaligned_range[0], unaligned_range[1]))
         if overlap == 1 and unaligned_range[0] == unaligned_range[1] + 1 and from_node.reference_name == \
                 to_node.reference_name:
-            unaligned_exon_bases += ((to_node.reference_block_start + node_overlap) - from_node.reference_block_end\
-                                       - 1) * args.gap_extend
+            unaligned_exon_bases += ((to_node.reference_block_start + node_overlap) - from_node.reference_block_end \
+                                     - 1) * args.gap_extend
         else:
             unaligned_exon_bases += max(0, overlap) * args.gap_extend
-    if unaligned_exon_bases >0:
-        unaligned_exon_bases += (args.gap_open - args.gap_extend) #gap open penalty
+    if unaligned_exon_bases > 0:
+        unaligned_exon_bases += (args.gap_open - args.gap_extend)  # gap open penalty
     return unaligned_exon_bases
 
 
@@ -285,19 +285,22 @@ def trim_path_boundaries(shortest_path_nodes):
 def convert_all_children_coords(shortest_path_nodes, children, parent):
     shortest_path_nodes.sort(key=lambda x: x.query_block_start)
     mapped_children = {}
-    total_bases, mismatches, insertions, deletions, matches = 0, 0, 0, 0,0
+    total_bases, mismatches, insertions, deletions, matches = 0, 0, 0, 0, 0
     for child in children:
         total_bases += (child.end - child.start + 1)
-        nearest_start_coord, nearest_end_coord = find_nearest_aligned_start_and_end(child.start, child.end,
-                                                                                    shortest_path_nodes, parent)
+        nearest_start_coord, nearest_end_coord,relative_start, relative_end = find_nearest_aligned_start_and_end(child.start, child.end,
+                                                                            shortest_path_nodes, parent)
         if nearest_start_coord != -1 and nearest_end_coord != -1:
-            lifted_start, start_node = convert_coord(nearest_start_coord, shortest_path_nodes)
+            lifted_start, start_node, = convert_coord(nearest_start_coord,
+                                                                                shortest_path_nodes)
             lifted_end, end_node = convert_coord(nearest_end_coord, shortest_path_nodes)
             deletions += find_deletions(start_node, end_node, shortest_path_nodes)
-            deletions += (nearest_start_coord - child.start) + (child.end - nearest_end_coord)
+            deletions += (nearest_start_coord - relative_start) + (relative_end- nearest_end_coord)
             mismatches += find_mismatched_bases(child.start, child.end, shortest_path_nodes, parent)
             insertions += find_insertions(start_node, end_node, shortest_path_nodes)
             strand = get_strand(shortest_path_nodes[0], parent)
+            if "ID" not in child.attributes:
+                child.attributes["ID"] = [child.id]
             new_child = new_feature.new_feature(child.id, child.featuretype, shortest_path_nodes[0].reference_name,
                                                 'Liftoff',
                                                 strand, min(lifted_start, lifted_end) + 1,
@@ -308,7 +311,7 @@ def convert_all_children_coords(shortest_path_nodes, children, parent):
             deletions += (child.end - child.start + 1)
     alignment_length = total_bases + insertions
     return mapped_children, (total_bases - deletions) / total_bases, (alignment_length - insertions - mismatches -
-                                                                      deletions)/ alignment_length
+                                                                      deletions) / alignment_length
 
 
 def find_nearest_aligned_start_and_end(child_start, child_end, shortest_path_nodes, parent):
@@ -317,7 +320,7 @@ def find_nearest_aligned_start_and_end(child_start, child_end, shortest_path_nod
     relative_start, relative_end = min(relative_coord1, relative_coord2), max(relative_coord1, relative_coord2)
     nearest_start = find_nearest_aligned_start(relative_start, relative_end, shortest_path_nodes)
     nearest_end = find_nearest_aligned_end(shortest_path_nodes, relative_end, relative_start)
-    return nearest_start, nearest_end
+    return nearest_start, nearest_end, relative_start, relative_end
 
 
 def find_nearest_aligned_start(relative_start, relative_end, shortest_path_nodes):
