@@ -1,7 +1,6 @@
 import networkx as nx
 from liftoff import aligned_seg, liftoff_utils, new_feature
 import numpy as np
-import igraph as ig
 
 
 def find_best_mapping(alignments, query_length, parent, feature_heirarchy, previous_feature_start,
