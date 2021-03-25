@@ -86,7 +86,7 @@ def parse_args(arglist=None):
                                                            "target and "
                                                          "reference; by default F=0.0")
 
-    parser.add_argument('-V', '--version', help='show program version', action='version', version='v1.5.1')
+    parser.add_argument('-V', '--version', help='show program version', action='version', version='v1.5.2')
     parser.add_argument(
         '-p', default=1, type=int, metavar='P', help='use p parallel processes to accelerate alignment; by default p=1'
     )
@@ -136,7 +136,7 @@ def parse_args(arglist=None):
     if '-p' not in args.mm2_options:
         args.mm2_options += " -p 0.5"
     if '--end-bonus' not in args.mm2_options:
-        args.mm2_options += "--end-bonus 5"
+        args.mm2_options += " --end-bonus 5"
     if (float(args.s) > float(args.sc)):
         parser.error("-sc must be greater than or equal to -s")
     if (args.chroms is None and args.unplaced is not None):
