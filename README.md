@@ -195,6 +195,9 @@ extra_copy_number: The copy number increase of this feature compared to the refe
 extra_copy_number=0 means this is the original reference gene. 
 ```
 
+## Known Issues:
+Extracting gene sequences from bgzipped files is possilbe but much slow. It is recommended to decompress bgzipped FASTA files first. 
+
 ## Citation
 If you use Liftoff in your work please cite<br/>
 
