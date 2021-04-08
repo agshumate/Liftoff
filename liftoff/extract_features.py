@@ -5,7 +5,7 @@ import os
 import sys
 import numpy as np
 import ujson as json
-
+import gzip
 
 
 
@@ -40,13 +40,12 @@ def build_database(db, gff_file, disable_transcripts, disable_genes,):
             feature_db = gffutils.create_db(gff_file, gff_file + "_db", merge_strategy="create_unique", force=True,
                                             disable_infer_transcripts=disable_transcripts,
                                             disable_infer_genes=disable_genes, verbose=True)
-
-
         except:
             find_problem_line(gff_file)
     else:
         feature_db = gffutils.FeatureDB(db)
     return feature_db
+
 
 
 
@@ -186,14 +185,14 @@ def write_gene_sequences_to_file(chrom_name, reference_fasta_name, reference_fas
         current_chrom = parents[0].seqid
     else:
         current_chrom = chrom_name
-    chrom_seq = reference_fasta_idx[current_chrom]
+    chrom_seq = reference_fasta_idx[current_chrom][:].seq
     for parent in parents:
         if parent.seqid != current_chrom and chrom_name == reference_fasta_name:
             current_chrom = parent.seqid
-            chrom_seq = reference_fasta_idx[current_chrom]
+            chrom_seq = reference_fasta_idx[current_chrom][:].seq
         if parent.seqid == chrom_name or chrom_name == reference_fasta_name:
             gene_length = parent.end - parent.start + 1
             parent.start = round(max(1, parent.start - args.flank * gene_length))
             parent.end = round(min(parent.end + args.flank * gene_length, len(chrom_seq)))
-            parent_seq = chrom_seq[parent.start - 1: parent.end].seq
+            parent_seq = chrom_seq[parent.start - 1: parent.end]
             fasta_out.write(">" + parent.id + "\n" + str(parent_seq) + "\n")

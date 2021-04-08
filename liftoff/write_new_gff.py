@@ -103,10 +103,10 @@ def edit_copy_ids(feature):
     copy_num = feature.attributes["extra_copy_number"][0]
     if copy_num != '0':
         feature.attributes["ID"] = [feature.attributes["ID"][0]+ "_" + copy_num]
-    if "Parent" in feature.attributes:
-        feature.attributes["Parent"] = [feature.attributes["Parent"][0] + "_" + copy_num]
-    if "gene_id" in feature.attributes:
-        feature.attributes["gene_id"] = [feature.attributes["gene_id"][0] + "_" + copy_num]
+        if "Parent" in feature.attributes:
+            feature.attributes["Parent"] = [feature.attributes["Parent"][0] + "_" + copy_num]
+        if "gene_id" in feature.attributes:
+            feature.attributes["gene_id"] = [feature.attributes["gene_id"][0] + "_" + copy_num]
 
 
 def make_gtf_line(feature):
