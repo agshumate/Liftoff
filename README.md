@@ -3,7 +3,7 @@
 [![Conda](https://img.shields.io/conda/dn/bioconda/liftoff?label=bioconda-install&style=plastic)](https://anaconda.org/bioconda/liftoff)
 ![Travis (.org)](https://img.shields.io/travis/agshumate/liftoff?style=plastic)
 
-<img width="200" src="https://github.com/agshumate/Liftoff/blob/master/liftoff_logo_current.svg">
+<img width="200" src="https://github.com/agshumate/Liftoff/blob/master/liftoff_logo_current_dark_mode4.svg">
 Liftoff is a tool that accurately maps annotations in GFF or GTF between assemblies of the same, or closely-related species. Unlike current coordinate lift-over tools which require a pre-generated “chain” file as input, Liftoff is a standalone tool that takes two genome assemblies and a reference annotation as input and outputs an annotation of the target genome. Liftoff uses Minimap2 [(Li, 2018)](https://academic.oup.com/bioinformatics/article/34/18/3094/4994778) to align the gene sequences from a reference genome to the target genome. Rather than aligning whole genomes, aligning only the gene sequences allows genes to be lifted over even if there are many structural differences between the two genomes. For each gene, Liftoff finds the alignments of the exons that maximize sequence identity while preserving the transcript and gene structure.  If two genes incorrectly map to overlapping loci, Liftoff determines which gene is most-likely mis-mapped, and attempts to re-map it. Liftoff can also find additional gene copies present in the target assembly that are not annotated in the reference. 
 
 
@@ -113,7 +113,13 @@ Miscellaneous settings:
 The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation or feature database. If an annotation file is provided with the -g argument, a feature database will be built automatically and can be used for future lift overs by providing the -db argument. 
 
 ### Feature Types
-By default, 'gene' features and all child features of genes (i.e. trancripts, mRNA, exons, CDS, UTRs) will be lifted over. The -f parameter can be used to specify a file containing a list of additional parent feature types you wish to lift-over. Note: feature IDs must be unique for every feature and may not contain spaces. 
+By default, 'gene' features and all child features of genes (i.e. trancripts, mRNA, exons, CDS, UTRs) will be lifted over. The -f parameter can be used to specify a file containing a list of additional parent feature types you wish to lift-over. Note: feature IDs must be unique for every feature and may not contain spaces. Example of a feature types file would be the following:
+
+```
+biological_region
+miRNA
+repeat_element
+```
 
 ### Sequence Identity and Alignment Coverage
 A gene will be considered mapped successfully if the alignment coverage and sequence identity in the child features (usually exons/CDS) is >= 50%. This can be changed with the -a and -s options. By default, genes that map below these thresholds will be included in the gff file with partial_mapping=True and low_identity=True in the last column. To exclude these partial/low identity mappings from the final GFF use -exclude_partial, and these genes will instead be written to the unmapped_features.txt file. The sequence identity and alignment coverage is reported in the final column of the output GFF for feach gene. 
