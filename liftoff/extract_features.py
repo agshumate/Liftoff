@@ -21,6 +21,7 @@ def extract_features_to_lift(ref_chroms, liftover_type, parents_to_lift, args):
 
 
 def create_feature_db_connections(args):
+    gffutils.constants.ignore_url_escape_characters = True
     if args.infer_transcripts is True:
         disable_transcripts = False
     else:
@@ -101,7 +102,8 @@ def add_children(parent_dict, child_dict, lowest_children, feature_db):
     c = feature_db.conn.cursor()
     cond = ', '.join('"{0}"'.format(w) for w in lowest_children)
     query = "select * from relations join features on features.id  = relations.child where relations.child IN ({})".format(cond)
-    results = c.execute(query)
+    c.execute(query)
+    results = c.fetchall()
     added_children_ids = []
     for result in results:
         feature_tup = tuple(result)

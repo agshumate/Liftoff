@@ -17,6 +17,7 @@ def polish_annotations(feature_list, ref_faidx, target_faidx, args, feature_heir
     transcript_list = [feature for feature in target_sub_features if "matches_ref_protein" in feature.attributes]
     good_transcripts = [tran for tran in transcript_list if  tran.attributes["valid_ORF"] == ["True"]]
     if len(transcript_list) != len(good_transcripts):
+        print(target_feature)
         output_sam = open(args.dir+"/polish.sam", 'w')
         write_sam_header(target_faidx, output_sam)
         target_gene = target_sub_features[0]
@@ -165,6 +166,9 @@ def polish_annotation(ref_gene, target_gene, ref_children, target_children, ref_
     ref_exons = [feature for feature in ref_children if feature.featuretype == "exon"]
     target_exons = [feature for feature in target_children if feature.featuretype == "exon"]
     ref_CDS = [feature for feature in ref_children if feature.featuretype == "CDS"]
+    if len(ref_exons) == 0:
+        ref_exons = ref_CDS
+        target_exons = [feature for feature in target_children if feature.featuretype == "CDS"]
     ref_CDS_intervals = liftoff_utils.merge_children_intervals(ref_CDS)
     splice_sites = add_splice_sites(ref_exons, ref_gene)
     merged_ref_intervals = liftoff_utils.merge_children_intervals(ref_exons)
