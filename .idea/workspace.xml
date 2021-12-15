@@ -3,16 +3,20 @@
   <component name="ChangeListManager">
     <list default="true" id="ea27950e-41e0-403b-8769-2a8559b43028" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+<<<<<<< Updated upstream
       <change beforePath="$PROJECT_DIR$/liftoff/extract_features.py" beforeDir="false" afterPath="$PROJECT_DIR$/liftoff/extract_features.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/liftoff/polish.py" beforeDir="false" afterPath="$PROJECT_DIR$/liftoff/polish.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/liftoff_logo_current.svg" beforeDir="false" afterPath="$PROJECT_DIR$/liftoff_logo_current.svg" afterDir="false" />
+=======
+      <change beforePath="$PROJECT_DIR$/liftoff/run_liftoff.py" beforeDir="false" afterPath="$PROJECT_DIR$/liftoff/run_liftoff.py" afterDir="false" />
+>>>>>>> Stashed changes
     </list>
-    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+<<<<<<< Updated upstream
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="false">
@@ -125,6 +129,8 @@
       </file>
     </leaf>
   </component>
+=======
+>>>>>>> Stashed changes
   <component name="FindInProjectRecents">
     <findStrings>
       <find>get_fasta</find>
@@ -162,6 +168,7 @@
     <option name="width" value="1440" />
     <option name="height" value="835" />
   </component>
+  <component name="ProjectId" id="22KZo8NqtF1edbpRSEcpY2Y3TQu" />
   <component name="ProjectView">
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
@@ -186,6 +193,10 @@
       </pane>
     </panes>
   </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
   <component name="PropertiesComponent">
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="true" />
@@ -200,18 +211,7 @@
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
-  <component name="RunDashboard">
-    <option name="ruleStates">
-      <list>
-        <RuleState>
-          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
-        </RuleState>
-        <RuleState>
-          <option name="name" value="StatusDashboardGroupingRule" />
-        </RuleState>
-      </list>
-    </option>
-  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="SvnConfiguration">
     <configuration />
   </component>
@@ -224,9 +224,13 @@
       <updated>1617380899420</updated>
       <workItem from="1617380901609" duration="919000" />
       <workItem from="1617382443168" duration="3845000" />
+<<<<<<< Updated upstream
       <workItem from="1622827416503" duration="2791000" />
       <workItem from="1624383403207" duration="7341000" />
       <workItem from="1626289139449" duration="1862000" />
+=======
+      <workItem from="1639588420225" duration="237000" />
+>>>>>>> Stashed changes
     </task>
     <servers />
   </component>
@@ -288,7 +292,7 @@
     </layout-to-restore>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
-    <option name="version" value="1" />
+    <option name="version" value="3" />
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/setup.py">
