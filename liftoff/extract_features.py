@@ -5,7 +5,7 @@ import os
 import sys
 import numpy as np
 import ujson as json
-import gzip
+
 
 
 
@@ -112,10 +112,11 @@ def add_children(parent_dict, child_dict, lowest_children, feature_db):
             child = new_feature.new_feature(feature_tup[3], feature_tup[6], feature_tup[4], feature_tup[5],
                                             feature_tup[10],
                                           feature_tup[7], feature_tup[8], json.loads(feature_tup[12]))
-            if "Parent" not in child.attributes:
-                add_parent_tag(child, feature_db)
-            child_dict[parent].append(child)
-            added_children_ids.append(child.id)
+            if child.featuretype != "intron":
+                if "Parent" not in child.attributes:
+                    add_parent_tag(child, feature_db)
+                child_dict[parent].append(child)
+                added_children_ids.append(child.id)
     single_level_features = np.setdiff1d(lowest_children, added_children_ids)
     for feature in single_level_features:
         if feature in parent_dict:

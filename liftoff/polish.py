@@ -186,6 +186,7 @@ def polish_annotation(ref_gene, target_gene, ref_children, target_children, ref_
             alignment = parasail.sg_dx_trace_scan_sat(capitalized_ref_seq, target_seq, 10, 1, matrix)
             write_sam_file(ref_interval, target_interval, ref_gene, target_gene, capitalized_ref_seq, alignment,
                            output_sam, flank)
+    remove_splice_sites(ref_exons, ref_gene)
 
 
 def add_splice_sites(exons, parent):
@@ -198,6 +199,14 @@ def add_splice_sites(exons, parent):
             exon.end = exon.end + 2
             splice_sites.append([exon.end - 1, exon.end])
     return splice_sites
+
+def remove_splice_sites(exons, parent):
+    for exon in exons:
+        if exon.start  != parent.start:
+            exon.start = exon.start + 2
+        if exon.end  != parent.end:
+            exon.end = exon.end - 2
+
 
 
 def find_overlapping_exon_groups(merged_ref_intervals, ref_exons):

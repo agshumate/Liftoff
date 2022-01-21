@@ -287,11 +287,9 @@ def convert_all_children_coords(shortest_path_nodes, children, parent):
     total_bases, mismatches, insertions, deletions, matches = 0, 0, 0, 0, 0
     for child in children:
         total_bases += (child.end - child.start + 1)
-        nearest_start_coord, nearest_end_coord,relative_start, relative_end = find_nearest_aligned_start_and_end(child.start, child.end,
-                                                                            shortest_path_nodes, parent)
+        nearest_start_coord, nearest_end_coord,relative_start, relative_end = find_nearest_aligned_start_and_end(child.start, child.end,shortest_path_nodes, parent)
         if nearest_start_coord != -1 and nearest_end_coord != -1:
-            lifted_start, start_node, = convert_coord(nearest_start_coord,
-                                                                                shortest_path_nodes)
+            lifted_start, start_node, = convert_coord(nearest_start_coord, shortest_path_nodes)
             lifted_end, end_node = convert_coord(nearest_end_coord, shortest_path_nodes)
             deletions += find_deletions(start_node, end_node, shortest_path_nodes)
             deletions += (nearest_start_coord - relative_start) + (relative_end- nearest_end_coord)

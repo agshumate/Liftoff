@@ -1,4 +1,11 @@
-from liftoff import liftoff_utils
+from liftoff import liftoff_utils, __version__
+import sys
+
+def write_header(f, out_type):
+    f.write("# " + " ".join(sys.argv) + "\n")
+    f.write("# Liftoff v" + __version__ + "\n")
+    if out_type == 'gff3':
+        f.write('##gff-version 3' + "\n")
 
 
 def write_new_gff(lifted_features, args, feature_db):
@@ -7,6 +14,7 @@ def write_new_gff(lifted_features, args, feature_db):
     else:
         f = "stdout"
     out_type = feature_db.dialect['fmt']
+    write_header(f, out_type)
     parents = liftoff_utils.get_parent_list(lifted_features)
     parents.sort(key=lambda x: x.id)
     final_parent_list = finalize_parent_features(parents, args)
