@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="ea27950e-41e0-403b-8769-2a8559b43028" name="Default Changelist" comment="">
+<<<<<<< Updated upstream
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
 <<<<<<< Updated upstream
       <change beforePath="$PROJECT_DIR$/liftoff/extract_features.py" beforeDir="false" afterPath="$PROJECT_DIR$/liftoff/extract_features.py" afterDir="false" />
@@ -10,12 +14,16 @@
 =======
       <change beforePath="$PROJECT_DIR$/liftoff/run_liftoff.py" beforeDir="false" afterPath="$PROJECT_DIR$/liftoff/run_liftoff.py" afterDir="false" />
 >>>>>>> Stashed changes
+=======
+      <change beforePath="$PROJECT_DIR$/liftoff/write_new_gff.py" beforeDir="false" afterPath="$PROJECT_DIR$/liftoff/write_new_gff.py" afterDir="false" />
+>>>>>>> Stashed changes
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
@@ -129,6 +137,8 @@
       </file>
     </leaf>
   </component>
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
   <component name="FindInProjectRecents">

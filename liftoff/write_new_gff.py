@@ -1,18 +1,19 @@
 from liftoff import liftoff_utils, __version__
 import sys
 
+
 def write_header(f, out_type):
-    f.write("# " + " ".join(sys.argv) + "\n")
-    f.write("# Liftoff v" + __version__ + "\n")
     if out_type == 'gff3':
         f.write('##gff-version 3' + "\n")
+    f.write("# Liftoff v" + __version__ + "\n")
+    f.write("# " + " ".join(sys.argv) + "\n")
 
 
 def write_new_gff(lifted_features, args, feature_db):
     if args.o != 'stdout':
         f = open(args.o, 'w')
     else:
-        f = "stdout"
+        f = sys.stdout
     out_type = feature_db.dialect['fmt']
     write_header(f, out_type)
     parents = liftoff_utils.get_parent_list(lifted_features)
@@ -77,53 +78,56 @@ def write_feature(children, outfile, child_features, parent_dict, output_type):
     for child in children:
         write_line(child, outfile, output_type)
         if child.id in parent_dict:
-            new_children = parent_dict[child.id]
+            new_children = parent_dict[child.id ]
             write_feature(new_children, outfile, child_features, parent_dict, output_type)
     return
 
 
 def write_line(feature, out_file, output_type):
+    if feature.attributes["extra_copy_number"][0]!='0':
+        attr_dict = edit_copy_ids(feature)
+    else:
+        attr_dict = feature.attributes
     if output_type == 'gff3':
-        line = make_gff_line(feature)
+        line = make_gff_line(attr_dict, feature)
     else:
-        line = make_gtf_line(feature)
-    if out_file == "stdout":
-        print(line)
-    else:
-        out_file.write(line)
-        out_file.write("\n")
+        line = make_gtf_line(attr_dict, feature)
+    out_file.write(line)
+    out_file.write("\n")
 
 
-def make_gff_line(feature):
-    edit_copy_ids(feature)
-    attributes_str = "ID=" + feature.attributes["ID"][0] + ";" #make ID the first printed attribute
-    for attr in feature.attributes:
+def make_gff_line(attr_dict, feature):
+    attributes_str = "ID=" + attr_dict["ID"][0] + ";" #make ID the first printed attribute
+    for attr in attr_dict:
         if attr != "copy_id":
             value_str = ""
-            for value in feature.attributes[attr]:
-                    value_str += value + ","
+            for value in attr_dict[attr]:
+                value_str += value + ","
             if attr != "ID":
                 attributes_str += (attr + "=" + value_str[:-1] + ";")
     return feature.seqid + "\t" + feature.source + "\t" + feature.featuretype + "\t" + str(feature.start) + \
            "\t" + str(feature.end) + "\t" + "." + "\t" + feature.strand + "\t" + "." + "\t" + attributes_str[:-1]
 
 def edit_copy_ids(feature):
+    new_attr_dict = feature.attributes.copy()
     copy_num = feature.attributes["extra_copy_number"][0]
-    if copy_num != '0':
-        feature.attributes["ID"] = [feature.attributes["ID"][0]+ "_" + copy_num]
-        if "Parent" in feature.attributes:
-            feature.attributes["Parent"] = [feature.attributes["Parent"][0] + "_" + copy_num]
-        if "gene_id" in feature.attributes:
-            feature.attributes["gene_id"] = [feature.attributes["gene_id"][0] + "_" + copy_num]
-
-
-def make_gtf_line(feature):
-    attributes_str = ""
     for attr in feature.attributes:
+        if attr[-3:] == "_id":
+            new_attr_dict[attr] = [feature.attributes[attr][0] + "_" + copy_num]
+        elif attr == 'ID':
+            new_attr_dict["ID"] = [feature.attributes["ID"][0]+ "_" + copy_num]
+        elif attr == "Parent":
+            new_attr_dict["Parent"] = [feature.attributes["Parent"][0] + "_" + copy_num]
+    return new_attr_dict
+
+
+def make_gtf_line(attr_dict, feature):
+    attributes_str = ""
+    for attr in attr_dict:
         if attr != "copy_id":
-            if len(feature.attributes[attr]) >0:
+            if len(attr_dict[attr]) >0:
                 value_str = ""
-                for value in feature.attributes[attr]:
+                for value in attr_dict[attr]:
                      value_str += value + ","
                 attributes_str += (attr + " " + '"' + value_str[:-1] + '"' + "; ")
     return feature.seqid + "\t" + feature.source + "\t" + feature.featuretype + "\t" + str(feature.start) + \
