@@ -42,7 +42,7 @@ def run_all_liftoff_steps(args):
          find_and_polish_broken_cds(args, lifted_feature_list,feature_hierarchy, ref_chroms,
                                                           target_chroms,
                                unmapped_features, feature_db, ref_parent_order)
-         if args.o is not 'stdout':
+         if args.o != 'stdout':
              args.o += "_polished"
     write_new_gff.write_new_gff(lifted_feature_list, args, feature_db)
 
