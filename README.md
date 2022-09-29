@@ -111,7 +111,7 @@ Miscellaneous settings:
                       by default GE=1
 ```
 ### Input
-The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation or feature database. If an annotation file is provided with the -g argument, a feature database will be built automatically and can be used for future lift overs by providing the -db argument. 
+The only required inputs are the reference genome sequence(fasta format), the target genome sequence(fasta format) and the reference annotation or feature database. If an annotation file is provided with the `-g` argument, a feature database will be built automatically and can be used for future lift overs by providing the `-db` argument. All files, i.e. gff3 and fasta, must be present in writable directories as indices will be created in place by the tool.
 
 ### Feature Types
 By default, 'gene' features and all child features of genes (i.e. trancripts, mRNA, exons, CDS, UTRs) will be lifted over. The -f parameter can be used to specify a file containing a list of additional parent feature types you wish to lift-over. Note: feature IDs must be unique for every feature and may not contain spaces. Example of a feature types file would be the following:
@@ -126,22 +126,22 @@ repeat_element
 A gene will be considered mapped successfully if the alignment coverage and sequence identity in the child features (usually exons/CDS) is >= 50%. This can be changed with the -a and -s options. By default, genes that map below these thresholds will be included in the gff file with partial_mapping=True and low_identity=True in the last column. To exclude these partial/low identity mappings from the final GFF use -exclude_partial, and these genes will instead be written to the unmapped_features.txt file. The sequence identity and alignment coverage is reported in the final column of the output GFF for feach gene. 
 
 ### Minimap2 parameters
-By default liftoff uses the following parameters for the minimap2 alignments -a --eqx --end-bonus 5  -N 50 -p 0.5
--a and --eqx specify that the output should be in SAM format with the cigar string including "=" for matches and "X" for mismatches (opposed to the default SAM format using 'M' for both). The -N and -p parameters specficied allow for more secondary alignments to be considered which is helpful in the resolution of multi-gene families. The --end-bonus parameter favors end-to-end alignments of the gene over soft clipping a mismatched base at the start or end of the alignment. For example if the stop codon of the reference gene is TAA and the stop codon of the target gene is TAG, without the end-bonus parameter, this alignment and subsequent annotation would be truncated by 1 base. 
+By default liftoff uses the following parameters for the minimap2 alignments `-a --eqx --end-bonus 5  -N 50 -p 0.5`
+`-a` and `--eqx` specify that the output should be in SAM format with the cigar string including "=" for matches and "X" for mismatches (opposed to the default SAM format using 'M' for both). The `-N` and `-p` parameters specficied allow for more secondary alignments to be considered which is helpful in the resolution of multi-gene families. The `--end-bonus` parameter favors end-to-end alignments of the gene over soft clipping a mismatched base at the start or end of the alignment. For example if the stop codon of the reference gene is TAA and the stop codon of the target gene is TAG, without the end-bonus parameter, this alignment and subsequent annotation would be truncated by 1 base. 
 
-The user may wish to change the minimap2 parameters for their specific data. This can be done with the -mm2_options parameter with a string of options to add/change preceeded by an "=" sign. The "=" is important as it distinguishes minimap2 parameters from liftoff parameters with the same flag. For more divergent species in particular, increasing the -r and -z parameters may improve results (see Minimap2 documentation for more details). An example of changing these with -mm2_options would be 
+The user may wish to change the minimap2 parameters for their specific data. This can be done with the `-mm2_options` parameter with a string of options to add/change preceeded by an "=" sign. The "=" is important as it distinguishes minimap2 parameters from liftoff parameters with the same flag. For more divergent species in particular, increasing the `-r` and `-z` parameters may improve results (see Minimap2 documentation for more details). An example of changing these with `-mm2_options` would be 
 
 ```
 -mm2_options="-r 2k -z 5000"
 ```
 ### Polishing Exon/CDS Annotations
-With the -polish option Liftoff will re-align the exons in attempt to restore proper coding sequences in cases where the lift-over resulted in start/stop codon loss or introduced an in-frame stop codon. This will increase the run time but offers improvments in preserving proper CDS annotations. With the polish option, 2 output GFF/GTF files will be created named {output}.gff and {output}.gff_polished. {output}.gff contains the annotations prior to the polishing step and {output}.gff_polished contains the annotations after being polished.
+With the `-polish` option Liftoff will re-align the exons in attempt to restore proper coding sequences in cases where the lift-over resulted in start/stop codon loss or introduced an in-frame stop codon. This will increase the run time but offers improvments in preserving proper CDS annotations. With the polish option, 2 output GFF/GTF files will be created named {output}.gff and {output}.gff_polished. {output}.gff contains the annotations prior to the polishing step and {output}.gff_polished contains the annotations after being polished.
 
 ### Gene Structure in Cross-Species Lift-over
-Liftoff works best when the gene structure (i.e intron size) is similar in the reference and target genomes. When genes differ significantly in size, the alignments are more fragmented and often small exons at the beginning or end of the gene are not aligned. Adding and aligning some percentage of flanking sequence to the gene with the -flank option can improve this in some cases. Additionally increasing the -d parameter will allow mappings where the genes are much larger in the target genome than in the reference. 
+Liftoff works best when the gene structure (i.e intron size) is similar in the reference and target genomes. When genes differ significantly in size, the alignments are more fragmented and often small exons at the beginning or end of the gene are not aligned. Adding and aligning some percentage of flanking sequence to the gene with the `-flank` option can improve this in some cases. Additionally increasing the -d parameter will allow mappings where the genes are much larger in the target genome than in the reference. 
 
 ### Chromosome by Chromosome Lift-over
-By default, all genes will be aligned to the entire target assembly. However, for chromosome-scale assemblies of the same species, the -chroms option can be used to perform the lift-over chromosome by chromosome which improves accuracy. After the chromosome by chromosome lift over is complete, any genes that did not map will be aligned to the whole genome. This is strongly recommended for repetitive/polyploid genomes where there are many similar genes on different chromosomes. This option can be enabled by providing a  comma seperated file chroms.txt with corresponding chromosome names with the -chroms argument. Each line of the file should follow {ref_chrom_name},{target_chrom_name} for each pair of corresponding chromosomes. For example, a lift over from a Genbank human assembly to a Refseq human assembly would have the following chroms.txt file. 
+By default, all genes will be aligned to the entire target assembly. However, for chromosome-scale assemblies of the same species, the `-chroms` option can be used to perform the lift-over chromosome by chromosome which improves accuracy. After the chromosome by chromosome lift over is complete, any genes that did not map will be aligned to the whole genome. This is strongly recommended for repetitive/polyploid genomes where there are many similar genes on different chromosomes. This option can be enabled by providing a comma separated file `chroms.txt` with corresponding chromosome names with the -chroms argument. Each line of the file should follow {ref_chrom_name},{target_chrom_name} for each pair of corresponding chromosomes. For example, a lift over from a Genbank human assembly to a Refseq human assembly would have the following `chroms.txt` file. 
  ```
 chr1,NC_000001.10
 chr2,NC_000002.11
@@ -203,7 +203,7 @@ extra_copy_number=0 means this is the original reference gene.
 ```
 
 ## Known Issues:
-Extracting gene sequences from bgzipped files is possilbe but much slow. It is recommended to decompress bgzipped FASTA files first. 
+Extracting gene sequences from bgzipped files is possible but much slower. It is recommended to decompress bgzipped FASTA files first. 
 
 ## Citation
 If you use Liftoff in your work please cite<br/>
