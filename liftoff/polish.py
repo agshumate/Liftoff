@@ -69,15 +69,21 @@ def count_good_cds(cds_features, ref_faidx, target_faidx, ref_children, target_s
             warnings.simplefilter('ignore')
             protein = longest_ORF.translate()
         transcript.attributes["valid_ORF"] = ['False']
+        validORF = True
         if len(protein) < 3:
             transcript.attributes["partial_ORF"] = ['True']
-        elif missing_start(protein):
-                transcript.attributes["missing_start_codon"] = ['True']
-        elif missing_stop(protein):
-            transcript.attributes["missing_stop_codon"] = ['True']
-        elif inframe_stop(protein):
-            transcript.attributes["inframe_stop_codon"] = ['True']
+            validORF = False
         else:
+            if missing_start(protein):
+                transcript.attributes["missing_start_codon"] = ['True']
+                validORF = False
+            if missing_stop(protein):
+                transcript.attributes["missing_stop_codon"] = ['True']
+                validORF = False
+            if inframe_stop(protein):
+                transcript.attributes["inframe_stop_codon"] = ['True']
+                validORF = False
+        if validORF:
             transcript.attributes["valid_ORF"] = ['True']
             good_cds_count +=1
         if longest_ORF != cds_seq:
