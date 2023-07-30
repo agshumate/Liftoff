@@ -301,7 +301,7 @@ def convert_all_children_coords(shortest_path_nodes, children, parent):
             new_child = new_feature.new_feature(child.id, child.featuretype, shortest_path_nodes[0].reference_name,
                                                 'Liftoff',
                                                 strand, min(lifted_start, lifted_end) + 1,
-                                                max(lifted_start, lifted_end) + 1, dict(child.attributes))
+                                                max(lifted_start, lifted_end) + 1, child.frame, dict(child.attributes))
             mapped_children[new_child.id] = new_child
 
         else:
