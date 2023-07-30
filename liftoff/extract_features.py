@@ -92,7 +92,7 @@ def add_parents(parent_dict, child_dict, highest_parents, parent_types_to_lift, 
     for result in c.execute(query):
         feature_tup = tuple(result)
         parent = new_feature.new_feature(feature_tup[0], feature_tup[3], feature_tup[1], feature_tup[2],feature_tup[7],
-                                          feature_tup[4], feature_tup[5], json.loads(feature_tup[9]))
+                                          feature_tup[4], feature_tup[5], feature_tup[8], json.loads(feature_tup[9]))
         if parent.featuretype in parent_types_to_lift:
             parent_dict[parent.id] = parent
             child_dict[parent.id] = []
@@ -111,7 +111,7 @@ def add_children(parent_dict, child_dict, lowest_children, feature_db):
         if parent in parent_dict:
             child = new_feature.new_feature(feature_tup[3], feature_tup[6], feature_tup[4], feature_tup[5],
                                             feature_tup[10],
-                                          feature_tup[7], feature_tup[8], json.loads(feature_tup[12]))
+                                          feature_tup[7], feature_tup[8], feature_tup[11], json.loads(feature_tup[12]))
             if child.featuretype != "intron":
                 if "Parent" not in child.attributes:
                     add_parent_tag(child, feature_db)
@@ -146,7 +146,7 @@ def add_intermediates(intermediate_ids, intermediate_dict, feature_db):
         feature_tup = tuple(result)
         intermediate_feature = new_feature.new_feature(feature_tup[0], feature_tup[3], feature_tup[1], feature_tup[2],
                                            feature_tup[7],
-                                          feature_tup[4], feature_tup[5], json.loads(feature_tup[9]))
+                                          feature_tup[4], feature_tup[5], feature_tup[8], json.loads(feature_tup[9]))
         intermediate_dict[intermediate_feature.id] = intermediate_feature
         if "Parent" not in intermediate_feature.attributes:
             add_parent_tag(intermediate_feature, feature_db)
