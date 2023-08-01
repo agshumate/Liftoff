@@ -49,7 +49,7 @@ def make_new_parent(feature_list, parent, feature_hierarchy):
     ref_parent = get_ref_parent(parent, feature_hierarchy)
     target_parent_feature = new_feature.new_feature(ref_parent.id, ref_parent.featuretype, children[0].seqid,
                                                     'Liftoff', children[0].strand, min(starts), max(ends),
-                                                    dict(ref_parent.attributes))
+                                                    ref_parent.frame, dict(ref_parent.attributes))
     feature_list[target_parent_feature.id] = target_parent_feature
     return target_parent_feature
 

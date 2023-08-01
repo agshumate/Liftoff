@@ -106,7 +106,7 @@ def make_gff_line(attr_dict, feature):
             if attr != "ID":
                 attributes_str += (attr + "=" + value_str[:-1] + ";")
     return feature.seqid + "\t" + feature.source + "\t" + feature.featuretype + "\t" + str(feature.start) + \
-           "\t" + str(feature.end) + "\t" + "." + "\t" + feature.strand + "\t" + "." + "\t" + attributes_str[:-1]
+           "\t" + str(feature.end) + "\t" + "." + "\t" + feature.strand + "\t" + feature.frame + "\t" + attributes_str[:-1]
 
 def edit_copy_ids(feature):
     new_attr_dict = feature.attributes.copy()
