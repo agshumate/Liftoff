@@ -30,17 +30,22 @@ def create_feature_db_connections(args):
         disable_genes = False
     else:
         disable_genes = True
-    feature_db = build_database(args.db, args.g, disable_transcripts, disable_genes)
+    feature_db = build_database(args.db, args.g, disable_transcripts, disable_genes, args.parent_field)
     return feature_db
 
 
+def build_database(db, gff_file, disable_transcripts, disable_genes, parent_field):
 
-def build_database(db, gff_file, disable_transcripts, disable_genes,):
+    def transform_parent(f):
+        if parent_field != "Parent" and parent_field in f.attributes:
+            f.attributes["Parent"] = f.attributes[parent_field]
+        return f
+
     if db is None:
         try:
             feature_db = gffutils.create_db(gff_file, gff_file + "_db", merge_strategy="create_unique", force=True,
                                             disable_infer_transcripts=disable_transcripts,
-                                            disable_infer_genes=disable_genes, verbose=True)
+                                            disable_infer_genes=disable_genes, verbose=True, transform=transform_parent)
         except:
             find_problem_line(gff_file)
     else:

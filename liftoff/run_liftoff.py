@@ -152,6 +152,10 @@ def parse_args(arglist):
                                                                                         "(partial, missing start, "
                                                                                         "missing stop, inframe stop "
                                                                                         "codon)")
+    parser.add_argument(
+        '-parent_field', metavar='TXT', help='GFF field used to identify the parent '
+                                       'of the feature; by default "Parent"',
+    )
     parser._positionals.title = 'Required input (sequences)'
     parser._optionals.title = 'Miscellaneous settings'
     parser._action_groups = [parser._positionals, refrgrp, outgrp, aligngrp, parser._optionals]
