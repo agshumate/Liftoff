@@ -165,7 +165,7 @@ def parse_args(arglist):
     if '-p' not in args.mm2_options:
         args.mm2_options += " -p 0.5"
     if '--end-bonus' not in args.mm2_options:
-        args.mm2_options += "--end-bonus 5"
+        args.mm2_options += " --end-bonus 5"
     if (float(args.s) > float(args.sc)):
         parser.error("-sc must be greater than or equal to -s")
     if (args.chroms is None and args.unplaced is not None):
